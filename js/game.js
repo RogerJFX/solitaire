@@ -38,11 +38,11 @@ $sol = window.$sol || {};
             })
         }
         function shuffle() {
-            const cards = [];
+            const cardIndices = [];
             for(let i = 0; i < $sol.constants.NUM_CARDS; i++) {
-                rand(cards);
+                rand(cardIndices);
             }
-            return cards;
+            return cardIndices;
         }
         toCards(shuffle()).forEach(card => {
             cards.push(new Card(card.color, card.type));
