@@ -34,7 +34,7 @@ $sol = window.$sol || {};
         }
         function toCards(num) {
             return num.map(n => {
-                return {color: n % 4, type: Math.floor(n / 4)};
+                return [n % 4, Math.floor(n / 4)];
             })
         }
         function shuffle() {
@@ -44,8 +44,8 @@ $sol = window.$sol || {};
             }
             return cardIndices;
         }
-        toCards(shuffle()).forEach(card => {
-            cards.push(new Card(card.color, card.type));
+        toCards(shuffle()).forEach(c => {
+            cards.push(new Card(c[0], c[1]));
         });
     }
 
