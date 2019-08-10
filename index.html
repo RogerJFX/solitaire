@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Solitaire</title>
+    <link rel="stylesheet" href="css/gameLayout.css">
+    <script src="js/constants.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+    <script>
+        window.addEventListener('load', () => {
+            $sol.game.init();
+        })
+    </script>
+</head>
+<body>
+<div>
+    <div id="backstage">
+        <div class="tile slot" id="slotKreuz"></div>
+        <div class="tile slot" id="slotPik"></div>
+        <div class="tile slot" id="slotHerz"></div>
+        <div class="tile slot" id="slotKaro"></div>
+
+        <div class="tile card heap" style="left:0px"></div>
+        <div class="tile card" style="left:120px"></div>
+
+        <div class="tile card cardBack" style="left:0px; top:200px;"></div>
+
+
+        <div class="tile card cardBack" style="left:120px; top:200px;"></div>
+        <div class="tile card cardBack" style="left:120px; top:235px;"></div>
+        <div class="tile card" style="left:120px; top:270px;"></div>
+
+        <div class="tile card" style="left:120px; top:305px;"></div>
+        <div class="tile card card3" style="left:120px; top:340px;"></div>
+        <div class="tile card card2" style="left:120px; top:375px;"></div>
+        <div class="tile card" style="left:120px; top:410px;"></div>
+
+        <div class="tile card" style="left:120px; top:445px;"></div>
+        <div class="tile card" style="left:120px; top:480px;"></div>
+        <div class="tile card card2" style="left:120px; top:515px;"></div>
+        <div class="tile card" style="left:120px; top:550px;"></div>
+        <div class="tile card card2" style="left:120px; top:585px;"></div>
+    </div>
+</div>
+
+</body>
+</html>
