@@ -4,8 +4,6 @@ body, html {
 
 #backstage {
     position:relative;
-    z-index: 0;
-
 }
 
 .tile {
@@ -21,16 +19,6 @@ body, html {
 
 .card {
     background-image: url("../img/card deck_50.png");
-    background-position: -8px -8px;
-
-}
-
-.card2 {
-    background-position: -1264px -168px;
-}
-
-.card3 {
-    background-position: -122px -168px;
 }
 
 .cardBack {
