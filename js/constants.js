@@ -8,7 +8,7 @@ $sol = window.$sol || {};
     self.NUM_LANES = 7;
     self.LANE_WIDTH = 120;
     self.CARD_TOP_OFFSET = 35;
-    self.LANES_TOP = 200;
+    self.LANES_TOP = 166;
 
     self.NUM_CARDS = 52;
 

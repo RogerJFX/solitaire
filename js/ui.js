@@ -105,25 +105,36 @@ $sol = window.$sol || {};
                 nodeProps.node.style.top = nodeProps.initialNodeY + diffY + 'px';
             });
         }
+        function appendAll(nodesProps) {
+            nodesProps.forEach(np => {
+                const card = np.node.getCard();
+                const appendix = card.getNextAppendingCard();
+                if(appendix !== null) {
+                    appendNode(card, appendix);
+                }
+            })
+        }
         node.onmousedown = (evt) => {
             const all = initAll(collectAll(node));
             const startX = evt.clientX;
             const startY = evt.clientY;
             const oldZIndex = node.style.zIndex;
-            node.onmousemove = (evtM) => {
+            document.onmousemove = (evtM) => {
                 const diffX = evtM.clientX - startX;
                 const diffY = evtM.clientY - startY;
                 moveAll(all, diffX, diffY);
             };
-            node.onmouseup = () => {
-                node.onmousemove = () => {};
+            document.onmouseup = () => {
+                document.onmousemove = () => {};
                 node.style.zIndex = oldZIndex;
                 const slots = findTarget(node);
                 if(slots.length !== 0) {
                     appendNode(slots[0], node);
+                    appendAll(all.slice());
                     $sol.game.checkAndTurn();
                 } else {
                     resetCard(node);
+                    appendAll(all.slice());
                 }
             };
         }
