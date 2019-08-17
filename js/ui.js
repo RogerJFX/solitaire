@@ -56,16 +56,34 @@ $sol = window.$sol || {};
         })
     }
 
+    function findTargetTarget(node) {
+        const card = node.getCard();
+        for(let i = 0; i < targets.length; i++) {
+            if(intersect(node, targets[i]) && $sol.game.canPushToTarget(card, i)) {
+                return () => {
+                    $sol.game.pushToTarget(card, i);
+                    card.withParent(null);
+                    node.style.left = targets[i].offsetLeft + 'px';
+                    node.style.top = targets[i].offsetTop + 'px';
+                    card.onTargetHeap = true;
+                    $sol.game.checkAndTurn();
+                };
+            }
+        }
+        return false;
+    }
+
     function findTarget(node) {
         return $sol.game.findTopLaneCards().filter(c => {
-            return (c.x === null && c.canAppend(node.getCard())) || (c.getNode() && intersect(node, c.getNode()) && c.canAppend(node.getCard()));
+            return (c.color === null && c.canAppend(node.getCard())) || (c.getNode() && intersect(node, c.getNode()) && c.canAppend(node.getCard()));
         });
     }
 
     function appendNode(parentCard, node) {
         const card = node.getCard();
         card.withParent(parentCard);
-        node.style.zIndex = parentCard.zIndex + 1 + '';
+        card.zIndex = parentCard.zIndex + 1;
+        node.style.zIndex = card.zIndex + '';
         card.x = parentCard.x;
         card.y = parentCard.y + 1;
         node.style.left = card.x * $sol.constants.LANE_WIDTH + 'px';
@@ -74,14 +92,49 @@ $sol = window.$sol || {};
 
     function resetCard(node) {
         const card = node.getCard();
-        node.style.left = card.x * $sol.constants.LANE_WIDTH + 'px';
-        node.style.top = ($sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
+        switch(card.state) {
+            case $sol.constants.CARD_STATE_ON_TARGET:
+                for(let i = 0; i < targets.length; i++) {
+                    if($sol.game.isCardOnTopOfTarget(card, i)) {
+                        node.style.left = targets[i].offsetLeft + 'px';
+                        node.style.top = targets[i].offsetTop + 'px';
+                    }
+                }
+                break;
+            case $sol.constants.CARD_STATE_ON_HEAP:
+                self.flipHeapCard(node);
+                break;
+            case $sol.constants.CARD_STATE_ON_FIELD:
+                const parentCard = card.getParentCard();
+                if(parentCard) {
+                    card.zIndex = parentCard.zIndex + 1;
+                    node.style.zIndex = card.zIndex + '';
+                }
+                node.style.left = card.x * $sol.constants.LANE_WIDTH + 'px';
+                node.style.top = ($sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
+                break;
+        }
+    }
+
+    function addDoubleClick(node, fn) {
+        node.onclick = () => {
+            let clickableAgain = true;
+            setTimeout(() => {
+                clickableAgain = false;
+                addDoubleClick(node, fn);
+            }, $sol.constants.DOUBLE_CLICK_TIMEOUT);
+            node.onclick = () => {
+                if(clickableAgain) {
+                    fn();
+                }
+            }
+        }
     }
 
     self.listenToHeapClick = (node) => {
         self.flipCard(node);
     };
-    // TODO: move all children.
+
     self.addDraggable = (node) => { // No, not a HTML draggable.
         function collectAll(node) { // returns an Array of movables.
             const all = [node.getCard()];
@@ -110,7 +163,7 @@ $sol = window.$sol || {};
                 const card = np.node.getCard();
                 const appendix = card.getNextAppendingCard();
                 if(appendix !== null) {
-                    appendNode(card, appendix);
+                    appendNode(card, appendix.getNode());
                 }
             })
         }
@@ -126,7 +179,20 @@ $sol = window.$sol || {};
             };
             document.onmouseup = () => {
                 document.onmousemove = () => {};
+                document.onmouseup = () => {};
                 node.style.zIndex = oldZIndex;
+                if(all.length === 1) {
+                    const fn = findTargetTarget(node);
+                    if(fn) {
+                        if(node.getCard().onTargetHeap) {
+                            node.getCard().onTargetHeap = false;
+                            $sol.game.removeCardFromTarget(node.getCard());
+                        }
+                        fn();
+                        $sol.game.checkAndTurn();
+                        return;
+                    }
+                }
                 const slots = findTarget(node);
                 if(slots.length !== 0) {
                     appendNode(slots[0], node);
@@ -156,7 +222,7 @@ $sol = window.$sol || {};
             node.addClass('cardBack');
             node.style.left = closedHeapCoords.x + 'px';
             node.style.top = closedHeapCoords.y + 'px';
-            node.onclick = () => self.flipCard(node);
+            node.onclick = () => node.getCard().flipHeapCard();
         }
         stage.appendChild(node);
         return node;
@@ -167,6 +233,8 @@ $sol = window.$sol || {};
         node.style.top = openHeapCoords.y + 'px';
         node.style.zIndex = ++openHeapZindex + '';
         node.removeClass('cardBack');
+        node.onclick = () => {};
+        addDoubleClick(node, () => { console.log('double click')});
         self.addDraggable(node);
     };
 
@@ -177,13 +245,22 @@ $sol = window.$sol || {};
         }
     };
 
+    self.updateCard = (card) => {
+        card.getNode().style.zIndex = card.zIndex;
+    };
+
     self.setStage = (element) => {
         stage = element;
     };
+    const targets = [];
     self.setSlots = (_slots) => {
         slots = _slots;
         closedHeapCoords = {x: slots.closedHeap.offsetLeft, y: slots.closedHeap.offsetTop};
         openHeapCoords = {x: slots.openHeap.offsetLeft, y: slots.openHeap.offsetTop};
+        targets.push(_slots.slotKaro);
+        targets.push(_slots.slotKreuz);
+        targets.push(_slots.slotHerz);
+        targets.push(_slots.slotPik);
     };
 
 })($sol.ui = $sol.ui || {});
