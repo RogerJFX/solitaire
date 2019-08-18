@@ -19,16 +19,16 @@ body, html {
 }
 
 .card {
-    background-image: url("../img/card deck_50.png");
+    background-image: url("../img/card_deck_50.png");
 }
 
 .cardBack {
-    background-image: url("../img/card deck_back_50.png") !important;
+    background-image: url("../img/card_deck_back_50.png") !important;
     background-position: -8px -8px !important;
 }
 
 .slot {
-    background-image: url("../img/card deck_place_50.png");
+    background-image: url("../img/card_deck_place_50.png");
 }
 
 .heap {
