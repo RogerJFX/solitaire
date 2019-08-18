@@ -24,6 +24,7 @@ $sol = window.$sol || {};
         return this;
     };
 
+    const targets = [];
     let stage;
     let slots;
     let closedHeapCoords, openHeapCoords;
@@ -56,21 +57,34 @@ $sol = window.$sol || {};
         })
     }
 
+    function doPushToTarget(card, i) {
+        $sol.game.pushToTarget(card, i);
+        card.withParent(null);
+        card.getNode().style.left = targets[i].offsetLeft + 'px';
+        card.getNode().style.top = targets[i].offsetTop + 'px';
+        $sol.game.checkAndTurn();
+        $sol.game.actionDone();
+    }
+
     function findTargetTarget(node) {
         const card = node.getCard();
         for(let i = 0; i < targets.length; i++) {
             if(intersect(node, targets[i]) && $sol.game.canPushToTarget(card, i)) {
                 return () => {
-                    $sol.game.pushToTarget(card, i);
-                    card.withParent(null);
-                    node.style.left = targets[i].offsetLeft + 'px';
-                    node.style.top = targets[i].offsetTop + 'px';
-                    card.onTargetHeap = true;
-                    $sol.game.checkAndTurn();
+                    doPushToTarget(card, i);
                 };
             }
         }
         return false;
+    }
+
+    function autoFindTargetTarget(node) {
+        const card = node.getCard();
+        for(let i = 0; i < targets.length; i++) {
+            if($sol.game.canPushToTarget(card, i)) {
+                doPushToTarget(card, i);
+            }
+        }
     }
 
     function findTarget(node) {
@@ -102,7 +116,7 @@ $sol = window.$sol || {};
                 }
                 break;
             case $sol.constants.CARD_STATE_ON_HEAP:
-                self.flipHeapCard(node);
+                self.flipHeapCard(node, true);
                 break;
             case $sol.constants.CARD_STATE_ON_FIELD:
                 const parentCard = card.getParentCard();
@@ -121,11 +135,13 @@ $sol = window.$sol || {};
             let clickableAgain = true;
             setTimeout(() => {
                 clickableAgain = false;
-                addDoubleClick(node, fn);
+                if(node.getCard().state !== $sol.constants.CARD_STATE_ON_TARGET) {
+                    addDoubleClick(node, fn);
+                }
             }, $sol.constants.DOUBLE_CLICK_TIMEOUT);
             node.onclick = () => {
                 if(clickableAgain) {
-                    fn();
+                    fn(node);
                 }
             }
         }
@@ -184,25 +200,28 @@ $sol = window.$sol || {};
                 if(all.length === 1) {
                     const fn = findTargetTarget(node);
                     if(fn) {
-                        if(node.getCard().onTargetHeap) {
-                            node.getCard().onTargetHeap = false;
-                            $sol.game.removeCardFromTarget(node.getCard());
-                        }
                         fn();
                         $sol.game.checkAndTurn();
+                        $sol.game.actionDone();
                         return;
                     }
                 }
                 const slots = findTarget(node);
                 if(slots.length !== 0) {
+                    if(all.length === 1 && node.getCard().state === $sol.constants.CARD_STATE_ON_TARGET) {
+                        $sol.game.removeCardFromTarget(node.getCard());
+                    }
                     appendNode(slots[0], node);
                     appendAll(all.slice());
                     $sol.game.checkAndTurn();
+                    $sol.game.actionDone();
                 } else {
                     resetCard(node);
                     appendAll(all.slice());
                 }
+                return true;
             };
+            return true;
         }
     };
 
@@ -222,20 +241,21 @@ $sol = window.$sol || {};
             node.addClass('cardBack');
             node.style.left = closedHeapCoords.x + 'px';
             node.style.top = closedHeapCoords.y + 'px';
-            node.onclick = () => node.getCard().flipHeapCard();
+            node.onclick = () => $sol.game.flipNextHeapCard();// node.getCard().flipHeapCard();
         }
         stage.appendChild(node);
         return node;
     };
 
-    self.flipHeapCard = (node) => {
+    self.flipHeapCard = (node, reset) => {
         node.style.left = openHeapCoords.x + 'px';
         node.style.top = openHeapCoords.y + 'px';
         node.style.zIndex = ++openHeapZindex + '';
         node.removeClass('cardBack');
-        node.onclick = () => {};
-        addDoubleClick(node, () => { console.log('double click')});
-        self.addDraggable(node);
+        if(!reset) {
+            self.addDraggable(node);
+            $sol.game.actionDone();
+        }
     };
 
     self.flipCard = (node) => {
@@ -252,7 +272,7 @@ $sol = window.$sol || {};
     self.setStage = (element) => {
         stage = element;
     };
-    const targets = [];
+
     self.setSlots = (_slots) => {
         slots = _slots;
         closedHeapCoords = {x: slots.closedHeap.offsetLeft, y: slots.closedHeap.offsetTop};
@@ -262,5 +282,17 @@ $sol = window.$sol || {};
         targets.push(_slots.slotHerz);
         targets.push(_slots.slotPik);
     };
+
+    self.actionDone = () => {
+        $sol.game.traverseCards((card) => {
+            if(card.state !== $sol.constants.CARD_STATE_ON_HEAP) {
+                card.getNode().onclick = () => {};
+            }
+        }).filter(card => {
+            return card.isOpen() && card.state !== $sol.constants.CARD_STATE_ON_TARGET && card.getNextAppendingCard() === null;
+        }).forEach(card => {
+            addDoubleClick(card.getNode(), autoFindTargetTarget);
+        });
+    }
 
 })($sol.ui = $sol.ui || {});

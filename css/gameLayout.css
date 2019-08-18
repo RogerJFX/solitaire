@@ -4,7 +4,7 @@ body, html {
 
 #backstage {
     position:relative;
-    left: 100px;
+    /*left: 30px;*/
 }
 
 .tile {
@@ -33,6 +33,13 @@ body, html {
 
 .heap {
     background-image: none;
+}
+
+#counterTile {
+    position: absolute;
+    left: 260px;
+    top: 60px;
+    color: white;
 }
 
 #slotKreuz {

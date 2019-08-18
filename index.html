@@ -18,7 +18,9 @@
                 closedHeap: document.getElementById('closedHeap'),
                 openHeap: document.getElementById('openHeap')
             });
-            $sol.game.init();
+            $sol.game.init((num) => {
+                document.getElementById('counterTile').innerHTML = num;
+            });
         })
     </script>
 </head>
@@ -32,6 +34,8 @@
 
         <div class="tile card heap" id="closedHeap" style="left:0"></div>
         <div class="tile card heap" id="openHeap" style="left:120px"></div>
+
+        <div class="counterTile" id="counterTile">100</div>
     </div>
 </div>
 
