@@ -30,6 +30,9 @@ body, html {
     background: none;
 }
 
+.addButton {
+    font-size: 12px !important;
+}
 .tile {
     position: absolute;
     width:100px;
