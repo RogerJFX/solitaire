@@ -16,7 +16,7 @@ $sol = window.$sol || {};
     Element.prototype.hasClass = Element.prototype.hasClass || function (clazz) {
         return this.getAttribute('class').split(' ').find(item => item === clazz) === clazz;
     };
-    // Ugly, but too lazy.
+
     Element.prototype.setCard = function (card) {
         this.getCard = () => {
             return card;

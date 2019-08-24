@@ -266,7 +266,6 @@ $sol = window.$sol || {};
     };
 
     self.actionDone = () => {
-        console.log('action done');
         // TODO: Implement history
          if(!heap.flipIfEmptyOpenHeap()) {
             $sol.ui.actionDone();
@@ -275,8 +274,8 @@ $sol = window.$sol || {};
     };
 
     // Forward references
-    self.flipNextHeapCard = () => {};
-    self.traverseCards = () => {};
+    self.flipNextHeapCard = null;
+    self.traverseCards = null;
 
     self.newGame = () => {
         cash -= 52;
