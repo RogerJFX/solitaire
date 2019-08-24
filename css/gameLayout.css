@@ -7,6 +7,29 @@ body, html {
     /*left: 30px;*/
 }
 
+#nextGame {
+    position: absolute;
+    width: 88px;
+    height: 24px;
+    text-align: center;
+    left: 6px;
+    top: 6px;
+
+    border-radius: 4px;
+    background: none;
+}
+
+#back {
+    position: absolute;
+    width: 88px;
+    height: 24px;
+    text-align: center;
+    left: 6px;
+    bottom: 6px;
+    border-radius: 4px;
+    background: none;
+}
+
 .tile {
     position: absolute;
     width:100px;
@@ -14,8 +37,9 @@ body, html {
     border: 1px solid #777;
     border-bottom-color: #444;
     border-right-color: #444;
-    border-radius: 6px;
+    border-radius: 7px;
     background-repeat: no-repeat;
+    color: #cdc;
 }
 
 .card {
@@ -35,13 +59,33 @@ body, html {
     background-image: none;
 }
 
-#counterTile {
-    position: absolute;
-    left: 260px;
-    top: 60px;
-    color: white;
+.ghostCard {
+    visibility: hidden;
 }
 
+.counterTile {
+    position: absolute;
+    width: 120px;
+    height: 24px;
+    border: none;
+}
+
+#counterTile {
+    left: 16px;
+    top: 76px;
+    text-align: left;
+}
+
+#cashTile {
+    right: 16px;
+    top: 52px;
+    text-align: right;
+    font-weight: bold;
+}
+
+.adminWrapper {
+    left: 240px;
+}
 #slotKreuz {
     left: 360px;
     background-position: -7px -168px;
@@ -57,4 +101,12 @@ body, html {
 #slotKaro {
     left: 720px;
     background-position: -7px -8px;
+}
+
+#closedHeap {
+    left:0;
+}
+
+#openHeap {
+    left:120px;
 }

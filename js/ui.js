@@ -89,7 +89,7 @@ $sol = window.$sol || {};
 
     function findTarget(node) {
         return $sol.game.findTopLaneCards().filter(c => {
-            return (c.color === null && c.canAppend(node.getCard())) || (c.getNode() && intersect(node, c.getNode()) && c.canAppend(node.getCard()));
+            return intersect(node, c.getNode()) && c.canAppend(node.getCard());
         });
     }
 
@@ -226,9 +226,12 @@ $sol = window.$sol || {};
     };
 
     self.createNode = (props) => {
+
         const node = document.createElement('DIV');
         node.addClass('tile').addClass('card');
-        if(!props.open) {
+        if(props.ghost) {
+            node.addClass('ghostCard');
+        } else if(!props.open) {
             node.addClass('cardBack');
         } else {
             self.addDraggable(node);
@@ -241,7 +244,7 @@ $sol = window.$sol || {};
             node.addClass('cardBack');
             node.style.left = closedHeapCoords.x + 'px';
             node.style.top = closedHeapCoords.y + 'px';
-            node.onclick = () => $sol.game.flipNextHeapCard();// node.getCard().flipHeapCard();
+            node.onclick = () => $sol.game.flipNextHeapCard();
         }
         stage.appendChild(node);
         return node;
@@ -271,6 +274,10 @@ $sol = window.$sol || {};
 
     self.setStage = (element) => {
         stage = element;
+    };
+
+    self.removeFromStage = (node) => {
+        node.parentElement.removeChild(node);
     };
 
     self.setSlots = (_slots) => {

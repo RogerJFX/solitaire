@@ -4,6 +4,7 @@ $sol = window.$sol || {};
     let heap;
     let nullCards = [];
     let targets = [];
+    let cash = 0;
 
     function Card(color, type) {
         const me = this;
@@ -12,12 +13,12 @@ $sol = window.$sol || {};
         this.type = type;
 
         this.state = $sol.constants.CARD_STATE_ON_HEAP;
-
-        let open = false;
         this.zIndex = 10;
-        let node;
         this.x = null;
         this.y = null;
+
+        let open = false;
+        let node;
 
         let nextCard = null;
         let parentCard = null;
@@ -55,15 +56,16 @@ $sol = window.$sol || {};
             $sol.ui.flipCard(node);
         };
 
-        this.createNode = () => {
+        this.createNode = (ghost) => {
             node = $sol.ui.createNode({
                 color: me.color,
                 type: me.type,
                 x: me.x,
                 y: me.y,
                 open: open,
-                visible: !!this.color
+                ghost: ghost
             }).setCard(me);
+            return me;
         };
 
         this.canAppend = (other) => {
@@ -100,10 +102,20 @@ $sol = window.$sol || {};
         }
     }
 
-    function Heap(_cards) {
-        const cards = _cards;
+    function Heap() {
+        let cards;
         let counterFn;
-        let index = cards.length - 1;
+        let index;
+        this.init = (_cards) => {
+            cards = _cards;
+            index = cards.length - 1;
+        };
+        this.takeSnapshot = () => {
+            return {
+                cards: JSON.parse(JSON.stringify(cards)),
+                index: index
+            }
+        };
         this.nextCard = () => {
             if(index === -1) {
                 return null;
@@ -128,7 +140,9 @@ $sol = window.$sol || {};
             });
         };
         this.traverseCards = (fn) => {
-            cards.forEach(card => fn(card));
+            if(cards) {
+                cards.forEach(card => fn(card));
+            }
             return cards;
         };
         this.flipIfEmptyOpenHeap = () => {
@@ -142,7 +156,8 @@ $sol = window.$sol || {};
             counterFn = fn;
         };
         this.triggerDone = () => {
-            counterFn(index + 1);
+            const onOpenHeap = cards.filter(card => card.state === $sol.constants.CARD_STATE_ON_HEAP && card.isOpen()).length;
+            counterFn([index + 1, onOpenHeap, cash]);
         }
     }
 
@@ -158,10 +173,15 @@ $sol = window.$sol || {};
                 card.zIndex = heap[heap.length-1].zIndex + 1;
             }
             heap.push(card.withState($sol.constants.CARD_STATE_ON_TARGET).withParent(null));
+            cash += 5;
             return card;
         };
         this.remove = () => {
-            return heap.pop();
+            const result = heap.pop();
+            if(result) {
+                cash -= 5;
+            }
+            return result;
         };
         this.canPut = (card) => {
             return card.color === color &&
@@ -194,11 +214,11 @@ $sol = window.$sol || {};
         toCards(shuffle()).forEach(c => {
             tmpCards.push(new Card(c[0], c[1]));
         });
-        console.log(JSON.stringify(tmpCards));
+       // console.log(JSON.stringify(tmpCards));
         return tmpCards;
-       // return $sol.constants.fromTestDeck();
+       // return $sol.test.fromTestDeck();
        // const result = [];
-       // const stored = [{"color":1,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":9,"state":1,"zIndex":10,"x":null,"y":null}];
+       // const stored = [{"color":1,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":0,"state":1,"zIndex":10,"x":null,"y":null}];
        // stored.forEach(st => result.push(new Card(st.color, st.type)));
        // return result;
     }
@@ -246,6 +266,7 @@ $sol = window.$sol || {};
     };
 
     self.actionDone = () => {
+        console.log('action done');
         // TODO: Implement history
          if(!heap.flipIfEmptyOpenHeap()) {
             $sol.ui.actionDone();
@@ -257,18 +278,19 @@ $sol = window.$sol || {};
     self.flipNextHeapCard = () => {};
     self.traverseCards = () => {};
 
-    self.init = (counterFn) => {
+    self.newGame = () => {
+        cash -= 52;
         let i, j;
         targets = [];
         for(i = 0; i < 4; i++) {
             targets.push(new Target(i));
         }
-        heap = new Heap(mixCards());
-        heap.setCounterFn(counterFn);
-        self.traverseCards = heap.traverseCards;
-        self.flipNextHeapCard = heap.flipNext;
+        heap.traverseCards(card => {
+            $sol.ui.removeFromStage(card.getNode());
+        });
+        heap.init(mixCards());
         for (i = 0; i < $sol.constants.NUM_LANES; i++) {
-            nullCards.push(new Card(null, null).withProps(i, -1));
+            nullCards.push(new Card(null, null).withProps(i, -1).createNode(true));
             for(j = 0; j <= i; j++) {
                 heap.nextCard()
                     .withProps(i, j, i === j)
@@ -279,6 +301,15 @@ $sol = window.$sol || {};
         }
         heap.createNodes();
         heap.flipNext();
+
+    };
+
+    self.init = (counterFn) => {
+        heap = new Heap();
+        heap.setCounterFn(counterFn);
+        self.traverseCards = heap.traverseCards;
+        self.flipNextHeapCard = heap.flipNext;
+        self.newGame();
     };
 
     self.Card = Card;
