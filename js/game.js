@@ -281,6 +281,7 @@ $sol = window.$sol || {};
         cash -= 52;
         let i, j;
         targets = [];
+        nullCards = [];
         for(i = 0; i < 4; i++) {
             targets.push(new Target(i));
         }
