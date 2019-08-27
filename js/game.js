@@ -301,7 +301,6 @@ $sol = window.$sol || {};
         }
         heap.createNodes();
         heap.flipNext();
-
     };
 
     self.init = (counterFn) => {

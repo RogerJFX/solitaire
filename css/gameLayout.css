@@ -33,6 +33,7 @@ body, html {
 .addButton {
     font-size: 12px !important;
 }
+
 .tile {
     position: absolute;
     width:100px;
@@ -43,6 +44,7 @@ body, html {
     border-radius: 7px;
     background-repeat: no-repeat;
     color: #cdc;
+    user-select: none;
 }
 
 .card {

@@ -7,7 +7,7 @@ $sol = window.$sol || {};
 
     self.NUM_LANES = 7;
     self.LANE_WIDTH = 120;
-    self.CARD_TOP_OFFSET = 35;
+    self.CARD_TOP_OFFSET = 32;
     self.LANES_TOP = 166;
 
     self.NUM_CARDS = 52;
@@ -21,7 +21,7 @@ $sol = window.$sol || {};
     self.CARD_STATE_ON_TARGET = 2;
     self.CARD_STATE_ON_FIELD = 4;
 
-    self.DOUBLE_CLICK_TIMEOUT = 1000;
+    self.DOUBLE_CLICK_TIMEOUT = 500;
 
 
 })($sol.constants = $sol.constants || {});
