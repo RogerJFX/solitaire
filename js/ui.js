@@ -57,21 +57,21 @@ $sol = window.$sol || {};
         })
     }
 
-    function doPushToTarget(card, i) {
+    self.doPushToTarget = (card, i) => {
         $sol.game.pushToTarget(card, i);
         card.withParent(null);
         card.getNode().style.left = targets[i].offsetLeft + 'px';
         card.getNode().style.top = targets[i].offsetTop + 'px';
         $sol.game.checkAndTurn();
         $sol.game.actionDone();
-    }
+    };
 
     function findTargetTarget(node) {
         const card = node.getCard();
         for(let i = 0; i < targets.length; i++) {
             if(intersect(node, targets[i]) && $sol.game.canPushToTarget(card, i)) {
                 return () => {
-                    doPushToTarget(card, i);
+                    self.doPushToTarget(card, i);
                 };
             }
         }
@@ -79,12 +79,7 @@ $sol = window.$sol || {};
     }
 
     function autoFindTargetTarget(node) {
-        const card = node.getCard();
-        for(let i = 0; i < targets.length; i++) {
-            if($sol.game.canPushToTarget(card, i)) {
-                doPushToTarget(card, i);
-            }
-        }
+        $sol.game.autoFindTarget(node.getCard(), self.doPushToTarget);
     }
 
     function findTarget(node) {
@@ -248,6 +243,28 @@ $sol = window.$sol || {};
         }
         stage.appendChild(node);
         return node;
+    };
+
+    self.serialize = (node) => {
+        return {
+            clazz: node.getAttribute('class'),
+            style: {
+                backgroundPosition: node.style.backgroundPosition,
+                left: node.style.left,
+                top: node.style.top,
+                zIndex: node.style.zIndex
+            },
+            onclick: node.onclick
+        }
+    };
+
+    self.deserialize = (node, ser) => {
+        node.setAttribute('class', ser.clazz);
+        node.style.backgroundPosition = ser.style.backgroundPosition;
+        node.style.left = ser.style.left;
+        node.style.top = ser.style.top;
+        node.style.zIndex = ser.style.zIndex;
+        node.onclick = ser.onclick;
     };
 
     self.flipHeapCard = (node, reset) => {

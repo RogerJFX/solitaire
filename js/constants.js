@@ -22,6 +22,7 @@ $sol = window.$sol || {};
     self.CARD_STATE_ON_FIELD = 4;
 
     self.DOUBLE_CLICK_TIMEOUT = 500;
+    self.AUTO_PLAY_TIMEOUT = 250;
 
 
 })($sol.constants = $sol.constants || {});

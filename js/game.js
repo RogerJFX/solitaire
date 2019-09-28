@@ -3,6 +3,7 @@ $sol = window.$sol || {};
 
     let heap;
     let nullCards = [];
+    let history = [];
     let targets = [];
     let cash = 0;
 
@@ -23,6 +24,31 @@ $sol = window.$sol || {};
         let nextCard = null;
         let parentCard = null;
 
+        this.serialize = () => {
+            return {
+                card: me,
+                x: me.x,
+                y: me.y,
+                z: me.zIndex,
+                state: me.state,
+                open: open,
+                nextCard: nextCard,
+                parentCard: parentCard,
+                nodeProps: $sol.ui.serialize(node)
+            };
+        };
+
+        this.deserialize = (ser) => {
+            me.x = ser.x;
+            me.y = ser.y;
+            me.zIndex = ser.z;
+            me.state = ser.state;
+            open = ser.open;
+            nextCard = ser.nextCard;
+            parentCard = ser.parentCard;
+            $sol.ui.deserialize(node, ser.nodeProps);
+        };
+
         this.withProps = (_x, _y, _open) => {
             this.x = _x;
             this.y = _y;
@@ -36,10 +62,10 @@ $sol = window.$sol || {};
         };
 
         this.withParent = (card) => {
-            if(parentCard) {
+            if (parentCard) {
                 parentCard.appendCard(null);
             }
-            if(card) {
+            if (card) {
                 card.appendCard(me);
             }
             parentCard = card;
@@ -84,7 +110,7 @@ $sol = window.$sol || {};
 
         this.appendCard = (_nextCard) => {
             nextCard = _nextCard || null;
-            if(nextCard) {
+            if (nextCard) {
                 nextCard.withState($sol.constants.CARD_STATE_ON_FIELD).zIndex = this.zIndex + 1;
             }
         };
@@ -112,12 +138,24 @@ $sol = window.$sol || {};
         };
         this.takeSnapshot = () => {
             return {
-                cards: JSON.parse(JSON.stringify(cards)),
-                index: index
+                cards: cards.map(card => card.serialize()),
+                heap: {
+                    index: index
+                },
+                targets: targets.map(target => target.serialize()),
+                nullCards: nullCards.map(card => card.serialize())
+            };
+        };
+        this.fromSnapshot = (ser) => {
+            ser.cards.forEach(item => item.card.deserialize(item));
+            ser.nullCards.forEach(item => item.card.deserialize(item));
+            index = ser.heap.index;
+            for (let i = 0; i < targets.length; i++) {
+                targets[i].deserialize(ser.targets[i]);
             }
         };
         this.nextCard = () => {
-            if(index === -1) {
+            if (index === -1) {
                 return null;
             }
             return cards[index--];
@@ -128,7 +166,7 @@ $sol = window.$sol || {};
             }
         };
         this.flipNext = () => {
-            if(index !== -1) {
+            if (index !== -1) {
                 this.nextCard().flipHeapCard();
                 return true;
             }
@@ -140,14 +178,14 @@ $sol = window.$sol || {};
             });
         };
         this.traverseCards = (fn) => {
-            if(cards) {
+            if (cards) {
                 cards.forEach(card => fn(card));
             }
             return cards;
         };
         this.flipIfEmptyOpenHeap = () => {
             const topOpenCard = cards.find(card => card.state === $sol.constants.CARD_STATE_ON_HEAP && card.isOpen());
-            if(!topOpenCard) {
+            if (!topOpenCard) {
                 return this.flipNext();
             }
             return false;
@@ -163,14 +201,20 @@ $sol = window.$sol || {};
 
     function Target(_color) {
         const color = _color;
-        const heap = [];
+        let heap = [];
+        this.serialize = () => {
+            return JSON.stringify(heap);
+        };
+        this.deserialize = (ser) => {
+            heap = JSON.parse(ser);
+        };
         this.getLast = () => {
             return heap[heap.length - 1];
         };
         this.put = (card) => {
             card.zIndex = 100;
-            if(heap.length !== 0) {
-                card.zIndex = heap[heap.length-1].zIndex + 1;
+            if (heap.length !== 0) {
+                card.zIndex = heap[heap.length - 1].zIndex + 1;
             }
             heap.push(card.withState($sol.constants.CARD_STATE_ON_TARGET).withParent(null));
             cash += 5;
@@ -178,7 +222,7 @@ $sol = window.$sol || {};
         };
         this.remove = () => {
             const result = heap.pop();
-            if(result) {
+            if (result) {
                 cash -= 5;
             }
             return result;
@@ -186,52 +230,57 @@ $sol = window.$sol || {};
         this.canPut = (card) => {
             return card.color === color &&
                 ((heap.length === 0 && card.type === 12)
-                    || (heap.length !== 0 && (heap[heap.length -1].type === card.type + 12 || heap[heap.length -1].type === card.type - 1)));
+                    || (heap.length !== 0 && (heap[heap.length - 1].type === card.type + 12 || heap[heap.length - 1].type === card.type - 1)));
         }
     }
 
     function mixCards() {
         const tmpCards = [];
+
         function rand(arr) {
             let candidate = Math.floor(Math.random() * $sol.constants.NUM_CARDS);
-            if(arr.includes(candidate)) {
+            if (arr.includes(candidate)) {
                 return rand(arr);
             }
             arr.push(candidate);
         }
+
         function toCards(nums) {
             return nums.map(n => {
                 return [n % 4, Math.floor(n / 4)];
             })
         }
+
         function shuffle() {
             const cardIndices = [];
-            for(let i = 0; i < $sol.constants.NUM_CARDS; i++) {
+            for (let i = 0; i < $sol.constants.NUM_CARDS; i++) {
                 rand(cardIndices);
             }
             return cardIndices;
         }
+
         toCards(shuffle()).forEach(c => {
             tmpCards.push(new Card(c[0], c[1]));
         });
-       // console.log(JSON.stringify(tmpCards));
+        // console.log(JSON.stringify(tmpCards));
         return tmpCards;
-       // return $sol.test.fromTestDeck();
-       // const result = [];
-       // const stored = [{"color":1,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":0,"state":1,"zIndex":10,"x":null,"y":null}];
-       // stored.forEach(st => result.push(new Card(st.color, st.type)));
-       // return result;
+        // return $sol.test.fromTestDeck();
+        // const result = [];
+        // const stored = [{"color":1,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":0,"state":1,"zIndex":10,"x":null,"y":null}];
+        // stored.forEach(st => result.push(new Card(st.color, st.type)));
+        // return result;
     }
 
     self.findTopLaneCards = () => {
         function doFindLast(nc) {
             let res = nc;
             let candidate;
-            while((candidate = res.getNextAppendingCard()) !== null) {
+            while ((candidate = res.getNextAppendingCard()) !== null) {
                 res = candidate;
             }
             return res;
         }
+
         return nullCards.map(nc => {
             return doFindLast(nc);
         });
@@ -250,28 +299,68 @@ $sol = window.$sol || {};
         card.updateLayout();
     };
 
+    self.autoFindTarget = (card, fn) => {
+        for (let i = 0; i < targets.length; i++) {
+            if (self.canPushToTarget(card, i)) {
+                fn(card, i);
+                return true;
+            }
+        }
+        return false;
+    };
+
+    self.autoPushToTarget = () => {
+        const success = self.findTopLaneCards().find(card => self.autoFindTarget(card, $sol.ui.doPushToTarget));
+        if (success) {
+            setTimeout(self.autoPushToTarget, $sol.constants.AUTO_PLAY_TIMEOUT);
+        }
+    };
+
     self.removeCardFromTarget = (card) => {
         const target = targets.find(t => {
             return t.getLast() === card;
         });
-        if(target) {
+        if (target) {
             target.remove();
         }
     };
 
     self.checkAndTurn = () => {
-      self.findTopLaneCards().filter(card => {
-          return !card.isOpen();
-      }).forEach(card => card.flipCard());
+        self.findTopLaneCards().filter(card => {
+            return !card.isOpen();
+        }).forEach(card => card.flipCard());
     };
 
     self.actionDone = () => {
-        // TODO: Implement history
-         if(!heap.flipIfEmptyOpenHeap()) {
+        if (!heap.flipIfEmptyOpenHeap()) {
             $sol.ui.actionDone();
-         }
-         heap.triggerDone();
+        }
+        toHistory(heap.takeSnapshot());
+        heap.triggerDone();
     };
+
+    let historyBlocked = false;
+
+    function toHistory(snapshot) {
+        if(!historyBlocked) { // Hm...
+            history.push(snapshot);
+            historyBlocked = true;
+            setTimeout(() => {
+                historyBlocked = false;
+            }, 100)
+        }
+
+    }
+
+    self.historyBack = () => {
+        if (history.length > 1) {
+            history.pop();
+            heap.fromSnapshot(history.pop());
+            self.actionDone();
+        }
+    };
+
+
 
     // Forward references
     self.flipNextHeapCard = null;
@@ -281,8 +370,9 @@ $sol = window.$sol || {};
         cash -= 52;
         let i, j;
         targets = [];
+        history = [];
         nullCards = [];
-        for(i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++) {
             targets.push(new Target(i));
         }
         heap.traverseCards(card => {
@@ -291,7 +381,7 @@ $sol = window.$sol || {};
         heap.init(mixCards());
         for (i = 0; i < $sol.constants.NUM_LANES; i++) {
             nullCards.push(new Card(null, null).withProps(i, -1).createNode(true));
-            for(j = 0; j <= i; j++) {
+            for (j = 0; j <= i; j++) {
                 heap.nextCard()
                     .withProps(i, j, i === j)
                     .withState($sol.constants.CARD_STATE_ON_FIELD)

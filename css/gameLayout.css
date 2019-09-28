@@ -1,37 +1,55 @@
 body, html {
     background: #464;
+    font-family: verdana, Arial, sans-serif;
+    font-size:14px;
 }
 
 #backstage {
     position:relative;
-    /*left: 30px;*/
+    margin: 0 auto;
+    width: 830px;
+}
+
+.button {
+    position: absolute;
+    height: 24px;
+    text-align: center;
+    border: 1px solid #888;
+    border-bottom-color: #666;
+    border-right-color: #666;
+    border-radius: 4px;
+    background: none;
+    font-size: 12px !important;
+    color: #cdc;
+    cursor: pointer;
+}
+
+.button span {
+    position: relative;
+    top: -2px;
 }
 
 #nextGame {
-    position: absolute;
     width: 88px;
-    height: 24px;
-    text-align: center;
     left: 6px;
     top: 6px;
-
-    border-radius: 4px;
-    background: none;
 }
 
 #back {
-    position: absolute;
-    width: 88px;
-    height: 24px;
-    text-align: center;
+    width: 42px;
     left: 6px;
     bottom: 6px;
-    border-radius: 4px;
-    background: none;
+    font-size: 18px !important;
+    line-height: 20px;
+    font-weight:bold;
 }
 
-.addButton {
-    font-size: 12px !important;
+#ff {
+    width: 42px;
+    right: 6px;
+    bottom: 6px;
+    font-size: 18px !important;
+    font-weight:bold;
 }
 
 .tile {
