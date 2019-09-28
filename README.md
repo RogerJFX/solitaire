@@ -5,4 +5,4 @@ This is an invitation to hack together. Of course I can do it by myself, but for
 
 Should be there:
 
-http://crazything.eu/sol/
+http://crazything.de
