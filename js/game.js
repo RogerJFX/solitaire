@@ -125,7 +125,11 @@ $sol = window.$sol || {};
 
         this.getParentCard = () => {
             return parentCard;
-        }
+        };
+
+        this.equals = (other) => {
+            return other && me.type === other.type && me.color === other.color;
+        };
     }
 
     function Heap() {
@@ -143,13 +147,15 @@ $sol = window.$sol || {};
                     index: index
                 },
                 targets: targets.map(target => target.serialize()),
-                nullCards: nullCards.map(card => card.serialize())
+                nullCards: nullCards.map(card => card.serialize()),
+                cash: cash
             };
         };
         this.fromSnapshot = (ser) => {
-            ser.cards.forEach(item => item.card.deserialize(item));
             ser.nullCards.forEach(item => item.card.deserialize(item));
+            ser.cards.forEach(item => item.card.deserialize(item));
             index = ser.heap.index;
+            cash = ser.cash;
             for (let i = 0; i < targets.length; i++) {
                 targets[i].deserialize(ser.targets[i]);
             }
@@ -291,7 +297,7 @@ $sol = window.$sol || {};
     };
 
     self.isCardOnTopOfTarget = (card, targetIndex) => {
-        return targets[targetIndex].getLast() === card;
+        return card.equals(targets[targetIndex].getLast());
     };
 
     self.pushToTarget = (card, targetIndex) => {
@@ -349,7 +355,6 @@ $sol = window.$sol || {};
                 historyBlocked = false;
             }, 100)
         }
-
     }
 
     self.historyBack = () => {

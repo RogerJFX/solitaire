@@ -107,6 +107,7 @@ $sol = window.$sol || {};
                     if($sol.game.isCardOnTopOfTarget(card, i)) {
                         node.style.left = targets[i].offsetLeft + 'px';
                         node.style.top = targets[i].offsetTop + 'px';
+                        node.style.zIndex = card.zIndex + '';
                     }
                 }
                 break;
