@@ -255,7 +255,8 @@ $sol = window.$sol || {};
                 top: node.style.top,
                 zIndex: node.style.zIndex
             },
-            onclick: node.onclick
+            onclick: node.onclick,
+            onmousedown: node.onmousedown
         }
     };
 
@@ -266,6 +267,7 @@ $sol = window.$sol || {};
         node.style.top = ser.style.top;
         node.style.zIndex = ser.style.zIndex;
         node.onclick = ser.onclick;
+        node.onmousedown = ser.onmousedown
     };
 
     self.flipHeapCard = (node, reset) => {
@@ -287,7 +289,7 @@ $sol = window.$sol || {};
     };
 
     self.updateCard = (card) => {
-        card.getNode().style.zIndex = card.zIndex;
+        card.getNode().style.zIndex = card.zIndex + '';
     };
 
     self.setStage = (element) => {

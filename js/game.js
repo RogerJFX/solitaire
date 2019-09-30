@@ -144,7 +144,7 @@ $sol = window.$sol || {};
             return {
                 cards: cards.map(card => card.serialize()),
                 heap: {
-                    index: index
+                    index: index + ''
                 },
                 targets: targets.map(target => target.serialize()),
                 nullCards: nullCards.map(card => card.serialize()),
@@ -152,13 +152,13 @@ $sol = window.$sol || {};
             };
         };
         this.fromSnapshot = (ser) => {
-            ser.nullCards.forEach(item => item.card.deserialize(item));
-            ser.cards.forEach(item => item.card.deserialize(item));
-            index = ser.heap.index;
+            index = Number(ser.heap.index);
             cash = ser.cash;
             for (let i = 0; i < targets.length; i++) {
                 targets[i].deserialize(ser.targets[i]);
             }
+            ser.nullCards.forEach(item => item.card.deserialize(item));
+            ser.cards.forEach(item => item.card.deserialize(item));
         };
         this.nextCard = () => {
             if (index === -1) {
@@ -268,13 +268,8 @@ $sol = window.$sol || {};
         toCards(shuffle()).forEach(c => {
             tmpCards.push(new Card(c[0], c[1]));
         });
-        // console.log(JSON.stringify(tmpCards));
+
         return tmpCards;
-        // return $sol.test.fromTestDeck();
-        // const result = [];
-        // const stored = [{"color":1,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":8,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":9,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":0,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":4,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":12,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":6,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":1,"state":1,"zIndex":10,"x":null,"y":null},{"color":2,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":7,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":10,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":5,"state":1,"zIndex":10,"x":null,"y":null},{"color":0,"type":3,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":11,"state":1,"zIndex":10,"x":null,"y":null},{"color":1,"type":2,"state":1,"zIndex":10,"x":null,"y":null},{"color":3,"type":0,"state":1,"zIndex":10,"x":null,"y":null}];
-        // stored.forEach(st => result.push(new Card(st.color, st.type)));
-        // return result;
     }
 
     self.findTopLaneCards = () => {
@@ -341,8 +336,8 @@ $sol = window.$sol || {};
         if (!heap.flipIfEmptyOpenHeap()) {
             $sol.ui.actionDone();
         }
-        toHistory(heap.takeSnapshot());
         heap.triggerDone();
+        toHistory(heap.takeSnapshot());
     };
 
     let historyBlocked = false;
@@ -353,7 +348,7 @@ $sol = window.$sol || {};
             historyBlocked = true;
             setTimeout(() => {
                 historyBlocked = false;
-            }, 100)
+            }, 25)
         }
     }
 
