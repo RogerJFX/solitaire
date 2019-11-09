@@ -319,7 +319,7 @@ $sol = window.$sol || {};
 
     self.removeCardFromTarget = (card) => {
         const target = targets.find(t => {
-            return t.getLast() === card;
+            return card.equals(t.getLast());
         });
         if (target) {
             target.remove();
@@ -348,7 +348,7 @@ $sol = window.$sol || {};
             historyBlocked = true;
             setTimeout(() => {
                 historyBlocked = false;
-            }, 25)
+            }, 50)
         }
     }
 
