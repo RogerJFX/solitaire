@@ -88,6 +88,7 @@ $sol = window.$sol || {};
                 type: me.type,
                 x: me.x,
                 y: me.y,
+                z: me.zIndex,
                 open: open,
                 ghost: ghost
             }).setCard(me);
@@ -139,6 +140,9 @@ $sol = window.$sol || {};
         this.init = (_cards) => {
             cards = _cards;
             index = cards.length - 1;
+            for (let i = 0; i < cards.length - 1; i++) {
+                cards[i].zIndex = 10 + i;
+            }
         };
         this.takeSnapshot = () => {
             return {
@@ -152,13 +156,29 @@ $sol = window.$sol || {};
             };
         };
         this.fromSnapshot = (ser) => {
-            index = Number(ser.heap.index);
-            cash = ser.cash;
-            for (let i = 0; i < targets.length; i++) {
-                targets[i].deserialize(ser.targets[i]);
-            }
-            ser.nullCards.forEach(item => item.card.deserialize(item));
-            ser.cards.forEach(item => item.card.deserialize(item));
+            return new Promise((resolve, reject) => {
+                index = Number(ser.heap.index);
+                cash = ser.cash;
+                for (let i = 0; i < targets.length; i++) {
+                    targets[i].deserialize(ser.targets[i]);
+                }
+                ser.nullCards.forEach(item => item.card.deserialize(item));
+
+                // setTimeout(() => {
+                //     console.log('now everybody');
+                const turned = ser.cards.filter(item => item.nodeProps.clazz.includes('turned'));
+                const notTurned = ser.cards.filter(item => !item.nodeProps.clazz.includes('turned'));
+
+                notTurned.forEach(item => item.card.deserialize(item));
+                // }, 1);
+
+                setTimeout(() => {
+                    turned.forEach(item => item.card.deserialize(item));
+                    resolve();
+                }, 120);
+            });
+
+
         };
         this.nextCard = () => {
             if (index === -1) {
@@ -355,8 +375,12 @@ $sol = window.$sol || {};
     self.historyBack = () => {
         if (history.length > 1) {
             history.pop();
-            heap.fromSnapshot(history.pop());
-            self.actionDone();
+            heap.fromSnapshot(history.pop()).then(() => {
+                self.actionDone();
+                console.log('action done in game');
+            });
+           //  setTimeout(self.actionDone, 1000);
+            // self.actionDone();
         }
     };
 

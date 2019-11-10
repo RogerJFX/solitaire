@@ -28,7 +28,7 @@ $sol = window.$sol || {};
     let stage;
     let slots;
     let closedHeapCoords, openHeapCoords;
-    let openHeapZindex = 10;
+    let openHeapZindex = 100;
 
     function calculateBgPos(color, type) {
         const h = $sol.constants.CARD_GRAPHIC_OFFSET - color * $sol.constants.CARD_HEIGHT;
@@ -60,10 +60,13 @@ $sol = window.$sol || {};
     self.doPushToTarget = (card, i) => {
         $sol.game.pushToTarget(card, i);
         card.withParent(null);
-        card.getNode().style.left = targets[i].offsetLeft + 'px';
-        card.getNode().style.top = targets[i].offsetTop + 'px';
-        $sol.game.checkAndTurn();
-        $sol.game.actionDone();
+        self.translateCard(card.getNode(), targets[i].offsetLeft, targets[i].offsetTop).then(() => {
+            $sol.game.checkAndTurn();
+            $sol.game.actionDone();
+        });
+        // card.getNode().style.left = targets[i].offsetLeft + 'px';
+        // card.getNode().style.top = targets[i].offsetTop + 'px';
+
     };
 
     function findTargetTarget(node) {
@@ -89,14 +92,20 @@ $sol = window.$sol || {};
     }
 
     function appendNode(parentCard, node) {
-        const card = node.getCard();
-        card.withParent(parentCard);
-        card.zIndex = parentCard.zIndex + 1;
-        node.style.zIndex = card.zIndex + '';
-        card.x = parentCard.x;
-        card.y = parentCard.y + 1;
-        node.style.left = card.x * $sol.constants.LANE_WIDTH + 'px';
-        node.style.top = ($sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
+        return new Promise((resolve) => {
+            const card = node.getCard();
+            card.withParent(parentCard);
+            card.zIndex = parentCard.zIndex + 1;
+            node.style.zIndex = card.zIndex + '';
+            card.x = parentCard.x;
+            card.y = parentCard.y + 1;
+            self.translateCard(card.getNode(), card.x * $sol.constants.LANE_WIDTH, $sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET).then(() => {
+                resolve();
+            });
+        });
+
+        // node.style.left = card.x * $sol.constants.LANE_WIDTH + 'px';
+        // node.style.top = ($sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
     }
 
     function resetCard(node) {
@@ -105,29 +114,37 @@ $sol = window.$sol || {};
             case $sol.constants.CARD_STATE_ON_TARGET:
                 for(let i = 0; i < targets.length; i++) {
                     if($sol.game.isCardOnTopOfTarget(card, i)) {
-                        node.style.left = targets[i].offsetLeft + 'px';
-                        node.style.top = targets[i].offsetTop + 'px';
-                        node.style.zIndex = card.zIndex + '';
+                        self.translateCard(node, targets[i].offsetLeft, targets[i].offsetTop).then(() => {
+                            node.style.zIndex = card.zIndex + '';
+                        });
+                        // node.style.left = targets[i].offsetLeft + 'px';
+                        // node.style.top = targets[i].offsetTop + 'px';
+
                     }
                 }
                 break;
             case $sol.constants.CARD_STATE_ON_HEAP:
-                self.flipHeapCard(node, true);
+                self.translateCard(node, openHeapCoords.x, openHeapCoords.y);
+                // self.flipHeapCard(node, true);
                 break;
             case $sol.constants.CARD_STATE_ON_FIELD:
                 const parentCard = card.getParentCard();
-                if(parentCard) {
-                    card.zIndex = parentCard.zIndex + 1;
-                    node.style.zIndex = card.zIndex + '';
-                }
-                node.style.left = card.x * $sol.constants.LANE_WIDTH + 'px';
-                node.style.top = ($sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
+
+                self.translateCard(node,card.x * $sol.constants.LANE_WIDTH, $sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET).then(() => {
+                    if(parentCard) {
+                        card.zIndex = parentCard.zIndex + 1;
+                        node.style.zIndex = card.zIndex + '';
+                    }
+                });
+                // node.style.left = card.x * $sol.constants.LANE_WIDTH + 'px';
+                // node.style.top = ($sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
                 break;
         }
     }
 
     function addDoubleClick(node, fn) {
         node.onclick = () => {
+            console.log('click');
             let clickableAgain = true;
             setTimeout(() => {
                 clickableAgain = false;
@@ -137,6 +154,7 @@ $sol = window.$sol || {};
             }, $sol.constants.DOUBLE_CLICK_TIMEOUT);
             node.onclick = () => {
                 if(clickableAgain) {
+                    console.log('double click', fn);
                     fn(node);
                 }
             }
@@ -184,15 +202,20 @@ $sol = window.$sol || {};
             const startX = evt.clientX;
             const startY = evt.clientY;
             const oldZIndex = node.style.zIndex;
+            let moved = false;
             document.onmousemove = (evtM) => {
                 const diffX = evtM.clientX - startX;
                 const diffY = evtM.clientY - startY;
                 moveAll(all, diffX, diffY);
+                moved = Math.abs(diffX) > 1 ||  Math.abs(diffY) > 1;
             };
             document.onmouseup = () => {
+
+                console.log('onmouseup');
                 document.onmousemove = () => {};
                 document.onmouseup = () => {};
                 node.style.zIndex = oldZIndex;
+                if(!moved) return;
                 if(all.length === 1) {
                     const fn = findTargetTarget(node);
                     if(fn) {
@@ -207,10 +230,12 @@ $sol = window.$sol || {};
                     if(all.length === 1 && node.getCard().state === $sol.constants.CARD_STATE_ON_TARGET) {
                         $sol.game.removeCardFromTarget(node.getCard());
                     }
-                    appendNode(slots[0], node);
-                    appendAll(all.slice());
-                    $sol.game.checkAndTurn();
-                    $sol.game.actionDone();
+                    appendNode(slots[0], node).then(() => {
+                        appendAll(all.slice());
+                        $sol.game.checkAndTurn();
+                        $sol.game.actionDone();
+                    });
+
                 } else {
                     resetCard(node);
                     appendAll(all.slice());
@@ -225,19 +250,32 @@ $sol = window.$sol || {};
 
         const node = document.createElement('DIV');
         node.addClass('tile').addClass('card');
+        const inner = document.createElement('DIV');
+
+        const backInner = document.createElement('DIV');
+        const frontInner = document.createElement('DIV');
+        inner.appendChild(frontInner);
+        inner.appendChild(backInner);
+        node.appendChild(inner);
         if(props.ghost) {
             node.addClass('ghostCard');
         } else if(!props.open) {
-            node.addClass('cardBack');
+            // node.addClass('cardBack');
+
         } else {
+            node.addClass('turned');
             self.addDraggable(node);
         }
-        node.style.backgroundPosition = calculateBgPos(props.color, props.type);
+        frontInner.style.backgroundPosition = calculateBgPos(props.color, props.type);
+        inner.addClass('inner');
+        frontInner.addClass('cardFront');
+        backInner.addClass('cardBack');
         if(props.x !== null) {
             node.style.left = props.x * $sol.constants.LANE_WIDTH + 'px';
             node.style.top = ($sol.constants.LANES_TOP + props.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
         } else { // Heap
-            node.addClass('cardBack');
+            // node.addClass('cardBack');
+            node.style.zIndex = props.z;
             node.style.left = closedHeapCoords.x + 'px';
             node.style.top = closedHeapCoords.y + 'px';
             node.onclick = () => $sol.game.flipNextHeapCard();
@@ -250,9 +288,8 @@ $sol = window.$sol || {};
         return {
             clazz: node.getAttribute('class'),
             style: {
-                backgroundPosition: node.style.backgroundPosition,
-                left: node.style.left,
-                top: node.style.top,
+                left: node.offsetLeft,
+                top: node.offsetTop,
                 zIndex: node.style.zIndex
             },
             onclick: node.onclick,
@@ -262,28 +299,63 @@ $sol = window.$sol || {};
 
     self.deserialize = (node, ser) => {
         node.setAttribute('class', ser.clazz);
-        node.style.backgroundPosition = ser.style.backgroundPosition;
-        node.style.left = ser.style.left;
-        node.style.top = ser.style.top;
-        node.style.zIndex = ser.style.zIndex;
-        node.onclick = ser.onclick;
-        node.onmousedown = ser.onmousedown
+        self.translateCard(node, ser.style.left, ser.style.top).then(() => {
+            node.style.zIndex = ser.style.zIndex;
+            node.onclick = ser.onclick;
+            node.onmousedown = ser.onmousedown
+        });
     };
 
     self.flipHeapCard = (node, reset) => {
-        node.style.left = openHeapCoords.x + 'px';
-        node.style.top = openHeapCoords.y + 'px';
         node.style.zIndex = ++openHeapZindex + '';
-        node.removeClass('cardBack');
-        if(!reset) {
-            self.addDraggable(node);
-            $sol.game.actionDone();
+        if (!reset) {
+            node.addClass('turned');
+            self.translateCard(node, openHeapCoords.x, openHeapCoords.y).then(() => {
+                self.addDraggable(node);
+                $sol.game.actionDone();
+            });
+        } else {
+            node.style.left = openHeapCoords.x + 'px';
+            node.style.top = openHeapCoords.y + 'px';
         }
+    };
+
+    self.translateCard = (node, left, top) => {
+        return new Promise((resolve) => {
+            const x = node.offsetLeft;
+            const y = node.offsetTop;
+            const diffX = left - x;
+            const diffY = top -y;
+            const steps = 5;
+            const stepX = diffX / steps;
+            const stepY = diffY / steps;
+            const stepsX = [];
+            const stepsY = [];
+            for (let i = 0; i < steps; i++) {
+                stepsX.push(x + stepX * i);
+                stepsY.push(y + stepY * i);
+            }
+            let c = 0;
+            const interval = window.setInterval(() => {
+                if(c < steps) {
+                    node.style.left = stepsX[c] + 'px';
+                    node.style.top = stepsY[c] + 'px';
+                    c++;
+                } else {
+                    node.style.left = left + 'px';
+                    node.style.top = top + 'px';
+                    window.clearInterval(interval);
+                    resolve();
+                }
+            }, 25);
+        });
+
     };
 
     self.flipCard = (node) => {
         if(node) { // if no null card
-            node.removeClass('cardBack');
+            // node.removeClass('cardBack');
+            node.addClass('turned');
             self.addDraggable(node);
         }
     };
