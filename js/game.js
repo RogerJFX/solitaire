@@ -6,6 +6,7 @@ $sol = window.$sol || {};
     let history = [];
     let targets = [];
     let cash = 0;
+    let mouseDownCount = 0;
 
     function Card(color, type) {
         const me = this;
@@ -38,7 +39,11 @@ $sol = window.$sol || {};
             };
         };
 
-        this.deserialize = (ser) => {
+        this.mustRenderByHistoryBack = (ser) => {
+            return me.x !== ser.x || me.y !== ser.y || open !== ser.open || me.state !== ser.state;
+        };
+
+        this.deserialize = (ser, dry) => {
             me.x = ser.x;
             me.y = ser.y;
             me.zIndex = ser.z;
@@ -46,7 +51,10 @@ $sol = window.$sol || {};
             open = ser.open;
             nextCard = ser.nextCard;
             parentCard = ser.parentCard;
-            $sol.ui.deserialize(node, ser.nodeProps);
+            if(!dry) {
+                return $sol.ui.deserialize(node, ser.nodeProps);
+            }
+
         };
 
         this.withProps = (_x, _y, _open) => {
@@ -88,6 +96,7 @@ $sol = window.$sol || {};
                 type: me.type,
                 x: me.x,
                 y: me.y,
+                z: me.zIndex,
                 open: open,
                 ghost: ghost
             }).setCard(me);
@@ -139,6 +148,9 @@ $sol = window.$sol || {};
         this.init = (_cards) => {
             cards = _cards;
             index = cards.length - 1;
+            for (let i = 0; i < cards.length - 1; i++) {
+                cards[i].zIndex = 10 + i;
+            }
         };
         this.takeSnapshot = () => {
             return {
@@ -152,13 +164,41 @@ $sol = window.$sol || {};
             };
         };
         this.fromSnapshot = (ser) => {
-            index = Number(ser.heap.index);
-            cash = ser.cash;
-            for (let i = 0; i < targets.length; i++) {
-                targets[i].deserialize(ser.targets[i]);
-            }
-            ser.nullCards.forEach(item => item.card.deserialize(item));
-            ser.cards.forEach(item => item.card.deserialize(item));
+            return new Promise((resolve, reject) => {
+                index = Number(ser.heap.index);
+                cash = ser.cash;
+                for (let i = 0; i < targets.length; i++) {
+                    targets[i].deserialize(ser.targets[i]);
+                }
+                ser.nullCards.forEach(item => item.card.deserialize(item));
+
+                ser.cards.filter(item => !item.card.mustRenderByHistoryBack(item)).forEach(item => item.card.deserialize(item, true));
+
+                // Rendering
+                const relevantCards = ser.cards.filter(item => item.card.mustRenderByHistoryBack(item));
+                const turned = relevantCards.filter(item => item.nodeProps.clazz.includes('turned'));
+                const notTurned = relevantCards.filter(item => !item.nodeProps.clazz.includes('turned'));
+
+                let count = relevantCards.length; // - 1;
+
+                function resolveIfFinished() {
+                    if(--count === 0) {
+                        ser.cards.filter(card => card && card.updateLayout).forEach(card => card.updateLayout());
+                        resolve();
+                    }
+                }
+
+                notTurned.forEach(item => item.card.deserialize(item).then(() => {
+                    resolveIfFinished();
+                }));
+                setTimeout(() => {
+                    turned.forEach(item => item.card.deserialize(item).then(() => resolveIfFinished()));
+                }, 40);
+
+
+            });
+
+
         };
         this.nextCard = () => {
             if (index === -1) {
@@ -311,6 +351,7 @@ $sol = window.$sol || {};
     };
 
     self.autoPushToTarget = () => {
+        self.mouseDown(1);
         const success = self.findTopLaneCards().find(card => self.autoFindTarget(card, $sol.ui.doPushToTarget));
         if (success) {
             setTimeout(self.autoPushToTarget, $sol.constants.AUTO_PLAY_TIMEOUT);
@@ -340,33 +381,35 @@ $sol = window.$sol || {};
         toHistory(heap.takeSnapshot());
     };
 
-    let historyBlocked = false;
+    // Records one action. Important for history.
+    self.mouseDown = (add) => {
+        mouseDownCount += add;
+    };
 
     function toHistory(snapshot) {
-        if(!historyBlocked) { // Hm...
-            history.push(snapshot);
-            historyBlocked = true;
-            setTimeout(() => {
-                historyBlocked = false;
-            }, 50)
+        if(history.length > 0 && history[history.length - 1][0] === mouseDownCount) {
+            history[history.length - 1] = [mouseDownCount, snapshot];
+        } else {
+            history.push([mouseDownCount, snapshot]);
         }
+
     }
 
     self.historyBack = () => {
         if (history.length > 1) {
             history.pop();
-            heap.fromSnapshot(history.pop());
-            self.actionDone();
+            heap.fromSnapshot(history.pop()[1]).then(() => {
+                self.actionDone();
+            });
         }
     };
-
-
 
     // Forward references
     self.flipNextHeapCard = null;
     self.traverseCards = null;
 
     self.newGame = () => {
+        mouseDownCount = 0;
         cash -= 52;
         let i, j;
         targets = [];
