@@ -64,9 +64,6 @@ $sol = window.$sol || {};
             $sol.game.checkAndTurn();
             $sol.game.actionDone();
         });
-        // card.getNode().style.left = targets[i].offsetLeft + 'px';
-        // card.getNode().style.top = targets[i].offsetTop + 'px';
-
     };
 
     function findTargetTarget(node) {
@@ -103,9 +100,6 @@ $sol = window.$sol || {};
                 resolve();
             });
         });
-
-        // node.style.left = card.x * $sol.constants.LANE_WIDTH + 'px';
-        // node.style.top = ($sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
     }
 
     function resetCard(node) {
@@ -117,15 +111,13 @@ $sol = window.$sol || {};
                         self.translateCard(node, targets[i].offsetLeft, targets[i].offsetTop).then(() => {
                             node.style.zIndex = card.zIndex + '';
                         });
-                        // node.style.left = targets[i].offsetLeft + 'px';
-                        // node.style.top = targets[i].offsetTop + 'px';
-
                     }
                 }
                 break;
             case $sol.constants.CARD_STATE_ON_HEAP:
-                self.translateCard(node, openHeapCoords.x, openHeapCoords.y);
-                // self.flipHeapCard(node, true);
+                self.translateCard(node, openHeapCoords.x, openHeapCoords.y).then(() => {
+                    node.style.zIndex = card.zIndex + '';
+                });
                 break;
             case $sol.constants.CARD_STATE_ON_FIELD:
                 const parentCard = card.getParentCard();
@@ -136,34 +128,28 @@ $sol = window.$sol || {};
                         node.style.zIndex = card.zIndex + '';
                     }
                 });
-                // node.style.left = card.x * $sol.constants.LANE_WIDTH + 'px';
-                // node.style.top = ($sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
                 break;
         }
     }
 
     function addDoubleClick(node, fn) {
         node.onclick = () => {
-            console.log('click');
             let clickableAgain = true;
             setTimeout(() => {
                 clickableAgain = false;
+                node.onclick = () => {};
                 if(node.getCard().state !== $sol.constants.CARD_STATE_ON_TARGET) {
                     addDoubleClick(node, fn);
                 }
             }, $sol.constants.DOUBLE_CLICK_TIMEOUT);
             node.onclick = () => {
+                $sol.game.mouseDown(-1);
                 if(clickableAgain) {
-                    console.log('double click', fn);
                     fn(node);
                 }
             }
         }
     }
-
-    self.listenToHeapClick = (node) => {
-        self.flipCard(node);
-    };
 
     self.addDraggable = (node) => { // No, not a HTML draggable.
         function collectAll(node) { // returns an Array of movables.
@@ -198,6 +184,7 @@ $sol = window.$sol || {};
             })
         }
         node.onmousedown = (evt) => {
+            $sol.game.mouseDown(1);
             const all = initAll(collectAll(node));
             const startX = evt.clientX;
             const startY = evt.clientY;
@@ -210,8 +197,6 @@ $sol = window.$sol || {};
                 moved = Math.abs(diffX) > 1 ||  Math.abs(diffY) > 1;
             };
             document.onmouseup = () => {
-
-                console.log('onmouseup');
                 document.onmousemove = () => {};
                 document.onmouseup = () => {};
                 node.style.zIndex = oldZIndex;
@@ -278,7 +263,10 @@ $sol = window.$sol || {};
             node.style.zIndex = props.z;
             node.style.left = closedHeapCoords.x + 'px';
             node.style.top = closedHeapCoords.y + 'px';
-            node.onclick = () => $sol.game.flipNextHeapCard();
+            node.onclick = () => {
+                $sol.game.mouseDown(1);
+                $sol.game.flipNextHeapCard();
+            }
         }
         stage.appendChild(node);
         return node;
@@ -298,26 +286,26 @@ $sol = window.$sol || {};
     };
 
     self.deserialize = (node, ser) => {
-        node.setAttribute('class', ser.clazz);
-        self.translateCard(node, ser.style.left, ser.style.top).then(() => {
-            node.style.zIndex = ser.style.zIndex;
-            node.onclick = ser.onclick;
-            node.onmousedown = ser.onmousedown
+        return new Promise((resolve) => {
+            node.setAttribute('class', ser.clazz);
+            self.translateCard(node, ser.style.left, ser.style.top).then(() => {
+                node.style.zIndex = ser.style.zIndex;
+                node.onclick = ser.onclick;
+                node.onmousedown = ser.onmousedown;
+                resolve();
+            });
         });
+
     };
 
-    self.flipHeapCard = (node, reset) => {
+    self.flipHeapCard = (node) => {
         node.style.zIndex = ++openHeapZindex + '';
-        if (!reset) {
-            node.addClass('turned');
-            self.translateCard(node, openHeapCoords.x, openHeapCoords.y).then(() => {
-                self.addDraggable(node);
-                $sol.game.actionDone();
-            });
-        } else {
-            node.style.left = openHeapCoords.x + 'px';
-            node.style.top = openHeapCoords.y + 'px';
-        }
+        node.getCard().zIndex = openHeapZindex;
+        node.addClass('turned');
+        self.translateCard(node, openHeapCoords.x, openHeapCoords.y).then(() => {
+            self.addDraggable(node);
+            $sol.game.actionDone();
+        });
     };
 
     self.translateCard = (node, left, top) => {
@@ -354,7 +342,6 @@ $sol = window.$sol || {};
 
     self.flipCard = (node) => {
         if(node) { // if no null card
-            // node.removeClass('cardBack');
             node.addClass('turned');
             self.addDraggable(node);
         }
