@@ -200,7 +200,10 @@ $sol = window.$sol || {};
                 document.onmousemove = () => {};
                 document.onmouseup = () => {};
                 node.style.zIndex = oldZIndex;
-                if(!moved) return;
+                if(!moved) {
+                    node.style.zIndex = node.getCard().zIndex + '';
+                    return;
+                }
                 if(all.length === 1) {
                     const fn = findTargetTarget(node);
                     if(fn) {
@@ -256,8 +259,9 @@ $sol = window.$sol || {};
         frontInner.addClass('cardFront');
         backInner.addClass('cardBack');
         if(props.x !== null) {
-            node.style.left = props.x * $sol.constants.LANE_WIDTH + 'px';
-            node.style.top = ($sol.constants.LANES_TOP + props.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
+            self.translateCard(node, props.x * $sol.constants.LANE_WIDTH, $sol.constants.LANES_TOP + props.y * $sol.constants.CARD_TOP_OFFSET);
+            // node.style.left = props.x * $sol.constants.LANE_WIDTH + 'px';
+            // node.style.top = ($sol.constants.LANES_TOP + props.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
         } else { // Heap
             // node.addClass('cardBack');
             node.style.zIndex = props.z;
@@ -337,7 +341,6 @@ $sol = window.$sol || {};
                 }
             }, 25);
         });
-
     };
 
     self.flipCard = (node) => {

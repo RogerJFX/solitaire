@@ -51,10 +51,9 @@ $sol = window.$sol || {};
             open = ser.open;
             nextCard = ser.nextCard;
             parentCard = ser.parentCard;
-            if(!dry) {
+            if (!dry) {
                 return $sol.ui.deserialize(node, ser.nodeProps);
             }
-
         };
 
         this.withProps = (_x, _y, _open) => {
@@ -179,10 +178,10 @@ $sol = window.$sol || {};
                 const turned = relevantCards.filter(item => item.nodeProps.clazz.includes('turned'));
                 const notTurned = relevantCards.filter(item => !item.nodeProps.clazz.includes('turned'));
 
-                let count = relevantCards.length; // - 1;
+                let count = relevantCards.length;
 
                 function resolveIfFinished() {
-                    if(--count === 0) {
+                    if (--count === 0) {
                         ser.cards.filter(card => card && card.updateLayout).forEach(card => card.updateLayout());
                         resolve();
                     }
@@ -194,11 +193,7 @@ $sol = window.$sol || {};
                 setTimeout(() => {
                     turned.forEach(item => item.card.deserialize(item).then(() => resolveIfFinished()));
                 }, 40);
-
-
             });
-
-
         };
         this.nextCard = () => {
             if (index === -1) {
@@ -255,6 +250,9 @@ $sol = window.$sol || {};
             heap = JSON.parse(ser);
         };
         this.getLast = () => {
+            if(heap.length === 0) {
+                return null;
+            }
             return heap[heap.length - 1];
         };
         this.put = (card) => {
@@ -264,7 +262,11 @@ $sol = window.$sol || {};
             }
             heap.push(card.withState($sol.constants.CARD_STATE_ON_TARGET).withParent(null));
             cash += 5;
+            checkTargetsFullAndAnimate();
             return card;
+        };
+        this.checkDone = () => {
+            return heap.length === 13;
         };
         this.remove = () => {
             const result = heap.pop();
@@ -310,6 +312,26 @@ $sol = window.$sol || {};
         });
 
         return tmpCards;
+    }
+
+    function checkTargetsFullAndAnimate() {
+        let done = true;
+        targets.forEach(target => {
+            if(!target.checkDone()) {
+                done = false;
+            }
+        });
+        if(done) {
+            window.setTimeout(()=> {
+                let i = 0;
+                const animator = $sol.animator.init();
+                heap.traverseCards(card => {
+                    window.setTimeout(() => {
+                        animator.throwNode(card.getNode());
+                    }, i++ * 40);
+                });
+            }, 500); // Just wait for the proper coords.
+        }
     }
 
     self.findTopLaneCards = () => {
@@ -387,12 +409,11 @@ $sol = window.$sol || {};
     };
 
     function toHistory(snapshot) {
-        if(history.length > 0 && history[history.length - 1][0] === mouseDownCount) {
+        if (history.length > 0 && history[history.length - 1][0] === mouseDownCount) {
             history[history.length - 1] = [mouseDownCount, snapshot];
         } else {
             history.push([mouseDownCount, snapshot]);
         }
-
     }
 
     self.historyBack = () => {
@@ -422,18 +443,34 @@ $sol = window.$sol || {};
             $sol.ui.removeFromStage(card.getNode());
         });
         heap.init(mixCards());
+        const tmpOpenCards = [];
         for (i = 0; i < $sol.constants.NUM_LANES; i++) {
             nullCards.push(new Card(null, null).withProps(i, -1).createNode(true));
             for (j = 0; j <= i; j++) {
-                heap.nextCard()
+                tmpOpenCards.push(heap.nextCard()
                     .withProps(i, j, i === j)
                     .withState($sol.constants.CARD_STATE_ON_FIELD)
-                    .withParent(heap.findCard(i, j - 1) || nullCards[i])
-                    .createNode();
+                    .withParent(heap.findCard(i, j - 1) || nullCards[i]));
             }
         }
-        heap.createNodes();
-        heap.flipNext();
+        tmpOpenCards.sort((a, b) => {
+            return b.x - a.x;
+        }).sort((a, b) => {
+            return a.y - b.y;
+        });
+        new Promise((resolve) => {
+            let i = 0;
+            const interval = window.setInterval(() => {
+                tmpOpenCards[i].createNode();
+                if (++i === tmpOpenCards.length) {
+                    window.clearInterval(interval);
+                    resolve();
+                }
+            }, 50);
+        }).then(() => {
+            heap.createNodes();
+            heap.flipNext();
+        });
     };
 
     self.init = (counterFn) => {
