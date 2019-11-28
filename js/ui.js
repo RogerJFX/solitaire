@@ -96,40 +96,54 @@ $sol = window.$sol || {};
             node.style.zIndex = card.zIndex + '';
             card.x = parentCard.x;
             card.y = parentCard.y + 1;
-            self.translateCard(card.getNode(), card.x * $sol.constants.LANE_WIDTH, $sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET).then(() => {
-                resolve();
-            });
+            self.translateCard(card.getNode(),
+                card.x * $sol.constants.LANE_WIDTH,
+                $sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET,
+                $sol.constants.ANI_STEPS_APPENDCARD,
+                $sol.constants.ANI_APPENDCARD_RESOLVE_AFTER)
+                .then(() => {
+                    resolve();
+                });
         });
     }
 
     function resetCard(node) {
         const card = node.getCard();
-        switch(card.state) {
-            case $sol.constants.CARD_STATE_ON_TARGET:
-                for(let i = 0; i < targets.length; i++) {
-                    if($sol.game.isCardOnTopOfTarget(card, i)) {
-                        self.translateCard(node, targets[i].offsetLeft, targets[i].offsetTop).then(() => {
+        return new Promise(resolve => {
+            switch (card.state) {
+                case $sol.constants.CARD_STATE_ON_TARGET:
+                    for (let i = 0; i < targets.length; i++) {
+                        if ($sol.game.isCardOnTopOfTarget(card, i)) {
+                            self.translateCard(node, targets[i].offsetLeft, targets[i].offsetTop, $sol.constants.ANI_STEPS_APPENDCARD)
+                                .then(() => {
+                                    node.style.zIndex = card.zIndex + '';
+                                    resolve();
+                                });
+                        }
+                    }
+                    break;
+                case $sol.constants.CARD_STATE_ON_HEAP:
+                    self.translateCard(node, openHeapCoords.x, openHeapCoords.y, $sol.constants.ANI_STEPS_APPENDCARD)
+                        .then(() => {
                             node.style.zIndex = card.zIndex + '';
+                            resolve();
                         });
-                    }
-                }
-                break;
-            case $sol.constants.CARD_STATE_ON_HEAP:
-                self.translateCard(node, openHeapCoords.x, openHeapCoords.y).then(() => {
-                    node.style.zIndex = card.zIndex + '';
-                });
-                break;
-            case $sol.constants.CARD_STATE_ON_FIELD:
-                const parentCard = card.getParentCard();
-
-                self.translateCard(node,card.x * $sol.constants.LANE_WIDTH, $sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET).then(() => {
-                    if(parentCard) {
-                        card.zIndex = parentCard.zIndex + 1;
-                        node.style.zIndex = card.zIndex + '';
-                    }
-                });
-                break;
-        }
+                    break;
+                case $sol.constants.CARD_STATE_ON_FIELD:
+                    const parentCard = card.getParentCard();
+                    self.translateCard(node, card.x * $sol.constants.LANE_WIDTH,
+                        $sol.constants.LANES_TOP + card.y * $sol.constants.CARD_TOP_OFFSET,
+                        $sol.constants.ANI_STEPS_APPENDCARD)
+                        .then(() => {
+                            if (parentCard) {
+                                card.zIndex = parentCard.zIndex + 1;
+                                node.style.zIndex = card.zIndex + '';
+                            }
+                            resolve();
+                        });
+                    break;
+            }
+        });
     }
 
     function addDoubleClick(node, fn) {
@@ -174,14 +188,26 @@ $sol = window.$sol || {};
                 nodeProps.node.style.top = nodeProps.initialNodeY + diffY + 'px';
             });
         }
-        function appendAll(nodesProps) {
-            nodesProps.forEach(np => {
-                const card = np.node.getCard();
-                const appendix = card.getNextAppendingCard();
-                if(appendix !== null) {
-                    appendNode(card, appendix.getNode());
+        const triggerAfterAppendAll =  ($sol.constants.ANI_STEPS_APPENDCARD -
+            $sol.constants.ANI_APPENDCARD_RESOLVE_AFTER + 1) * $sol.constants.MILLIS_PER_STEP;
+        function appendAll(nodesProps, cb) {
+            if(nodesProps.length === 0) {
+                if(cb) {
+                    // setTimeout(cb, triggerAfterAppendAll);
+                    cb();
                 }
-            })
+                return;
+            }
+            const np = nodesProps.shift();
+            const card = np.node.getCard();
+            const appendix = card.getNextAppendingCard();
+            if(appendix !== null) {
+                appendNode(card, appendix.getNode()).then(_ => {
+                    appendAll(nodesProps, cb);
+                });
+            } else if(cb) {
+                setTimeout(cb, triggerAfterAppendAll);
+            }
         }
         node.onmousedown = (evt) => {
             $sol.game.mouseDown(1);
@@ -194,7 +220,7 @@ $sol = window.$sol || {};
                 const diffX = evtM.clientX - startX;
                 const diffY = evtM.clientY - startY;
                 moveAll(all, diffX, diffY);
-                moved = Math.abs(diffX) > 1 ||  Math.abs(diffY) > 1;
+                moved = moved || Math.abs(diffX) > 1 ||  Math.abs(diffY) > 1;
             };
             document.onmouseup = () => {
                 document.onmousemove = () => {};
@@ -219,14 +245,18 @@ $sol = window.$sol || {};
                         $sol.game.removeCardFromTarget(node.getCard());
                     }
                     appendNode(slots[0], node).then(() => {
-                        appendAll(all.slice());
-                        $sol.game.checkAndTurn();
-                        $sol.game.actionDone();
+                        appendAll(all.slice(), () => {
+                            $sol.game.checkAndTurn();
+                            $sol.game.actionDone();
+                        });
+
                     });
 
                 } else {
-                    resetCard(node);
-                    appendAll(all.slice());
+                    resetCard(node).then(_ => {
+                        appendAll(all.slice());
+                    });
+
                 }
                 return true;
             };
@@ -260,8 +290,6 @@ $sol = window.$sol || {};
         backInner.addClass('cardBack');
         if(props.x !== null) {
             self.translateCard(node, props.x * $sol.constants.LANE_WIDTH, $sol.constants.LANES_TOP + props.y * $sol.constants.CARD_TOP_OFFSET);
-            // node.style.left = props.x * $sol.constants.LANE_WIDTH + 'px';
-            // node.style.top = ($sol.constants.LANES_TOP + props.y * $sol.constants.CARD_TOP_OFFSET) + 'px';
         } else { // Heap
             // node.addClass('cardBack');
             node.style.zIndex = props.z;
@@ -312,13 +340,15 @@ $sol = window.$sol || {};
         });
     };
 
-    self.translateCard = (node, left, top) => {
+    self.translateCard = (node, left, top, _steps, _resolveAfter) => {
+        const steps = _steps || $sol.constants.ANI_STEPS_TRANSLATECARD;
+        const resolveAfter = _resolveAfter || steps;
+        let resolved = false;
         return new Promise((resolve) => {
             const x = node.offsetLeft;
             const y = node.offsetTop;
             const diffX = left - x;
             const diffY = top -y;
-            const steps = 5;
             const stepX = diffX / steps;
             const stepY = diffY / steps;
             const stepsX = [];
@@ -328,18 +358,27 @@ $sol = window.$sol || {};
                 stepsY.push(y + stepY * i);
             }
             let c = 0;
+            const oldZIndex = node.style.zIndex;
+            node.style.zIndex = 7777 + '';
             const interval = window.setInterval(() => {
                 if(c < steps) {
                     node.style.left = stepsX[c] + 'px';
                     node.style.top = stepsY[c] + 'px';
+                    if(c === resolveAfter) {
+                        resolved = true;
+                        resolve();
+                    }
                     c++;
                 } else {
                     node.style.left = left + 'px';
                     node.style.top = top + 'px';
                     window.clearInterval(interval);
-                    resolve();
+                    node.style.zIndex = oldZIndex; // Might be modified after resolve.
+                    if(!resolved) {
+                        resolve();
+                    }
                 }
-            }, 25);
+            }, $sol.constants.MILLIS_PER_STEP);
         });
     };
 

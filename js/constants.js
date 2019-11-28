@@ -24,5 +24,11 @@ $sol = window.$sol || {};
     self.DOUBLE_CLICK_TIMEOUT = 500;
     self.AUTO_PLAY_TIMEOUT = 250;
 
+    self.ANI_STEPS_TRANSLATECARD = 5;
+    self.ANI_STEPS_APPENDCARD = 3;
+    self.ANI_APPENDCARD_RESOLVE_AFTER = 1;
+
+    self.MILLIS_PER_STEP = 25;
+
 
 })($sol.constants = $sol.constants || {});

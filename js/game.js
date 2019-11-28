@@ -79,14 +79,18 @@ $sol = window.$sol || {};
             return me;
         };
 
-        this.flipHeapCard = () => {
+        this.flipHeapCard = (dry) => {
             open = true;
-            $sol.ui.flipHeapCard(node);
+            if(!dry) {
+                $sol.ui.flipHeapCard(node);
+            }
         };
 
-        this.flipCard = () => {
+        this.flipCard = (dry) => {
             open = true;
-            $sol.ui.flipCard(node);
+            if(!dry) {
+                $sol.ui.flipCard(node);
+            }
         };
 
         this.createNode = (ghost) => {
@@ -103,7 +107,7 @@ $sol = window.$sol || {};
         };
 
         this.canAppend = (other) => {
-            const otherType = other.type === 12 ? -1 : other.type;
+            const otherType = other.type === 12 ? -1001 : other.type;
             return (me.type === null && otherType === 11)
                 || (me.color % 2 !== other.color % 2 && me.type === otherType + 1);
         };
@@ -133,6 +137,14 @@ $sol = window.$sol || {};
 
         this.getParentCard = () => {
             return parentCard;
+        };
+
+        this.correctLaneCoords = () => {
+            if(nextCard) {
+                nextCard.x = this.x;
+                nextCard.y = this.y + 1;
+                nextCard.correctLaneCoords();
+            }
         };
 
         this.equals = (other) => {
@@ -206,9 +218,9 @@ $sol = window.$sol || {};
                 cards[i].createNode();
             }
         };
-        this.flipNext = () => {
+        this.flipNext = (dry) => {
             if (index !== -1) {
-                this.nextCard().flipHeapCard();
+                this.nextCard().flipHeapCard(dry);
                 return true;
             }
             return false;
@@ -237,7 +249,8 @@ $sol = window.$sol || {};
         this.triggerDone = () => {
             const onOpenHeap = cards.filter(card => card.state === $sol.constants.CARD_STATE_ON_HEAP && card.isOpen()).length;
             counterFn([index + 1, onOpenHeap, cash]);
-        }
+        };
+        this.getCards = () => cards;
     }
 
     function Target(_color) {
@@ -389,10 +402,10 @@ $sol = window.$sol || {};
         }
     };
 
-    self.checkAndTurn = () => {
+    self.checkAndTurn = (dry) => {
         self.findTopLaneCards().filter(card => {
             return !card.isOpen();
-        }).forEach(card => card.flipCard());
+        }).forEach(card => card.flipCard(dry));
     };
 
     self.actionDone = () => {
@@ -401,6 +414,7 @@ $sol = window.$sol || {};
         }
         heap.triggerDone();
         toHistory(heap.takeSnapshot());
+
     };
 
     // Records one action. Important for history.
@@ -413,6 +427,7 @@ $sol = window.$sol || {};
             history[history.length - 1] = [mouseDownCount, snapshot];
         } else {
             history.push([mouseDownCount, snapshot]);
+            $sol.robot.record(heap.getCards(), $sol.robot.getCurrSituation());
         }
     }
 
@@ -470,10 +485,13 @@ $sol = window.$sol || {};
         }).then(() => {
             heap.createNodes();
             heap.flipNext();
+            $sol.robot.record(heap.getCards(), null);
         });
+
     };
 
     self.init = (counterFn) => {
+        $sol.robot.init();
         heap = new Heap();
         heap.setCounterFn(counterFn);
         self.traverseCards = heap.traverseCards;

@@ -68,7 +68,8 @@ $sol = window.$sol || {};
 
     // Just for some logging.
     self.getType = (card) => {
-        return [COLORS[card.color], TYPES[card.type]];
+        return `${COLORS[card.color]}::${TYPES[card.type]}`;
+        // return [COLORS[card.color], TYPES[card.type]];
     };
 
     self.fromTestDeck = () => {

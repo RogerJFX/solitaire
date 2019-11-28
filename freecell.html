@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Free Cell</title>
+    <link rel="stylesheet" href="css/gameLayout.css?5">
+    <script src="js/constants.js?5"></script>
+    <script src="js/ui.js?5"></script>
+    <script src="js/game.js?5"></script>
+    <script src="js/animator.js?5"></script>
+    <script>
+
+        const colors = ['C', 'D', 'H', 'S'];
+        const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K'];
+        const DECK = values.flatMap(v => colors.map(c => `${v}${c}`));
+
+        let seed = 0;
+
+        function random() {
+            seed = (214013 * seed + 2531011) & 0x7FFFFFFF;
+            return seed >> 16;
+        }
+
+        function shuffle() {
+            const deck = DECK.map(_ => _);
+            for(let i = deck.length - 1; i > 0; i--) {
+                const r = random() % (i + 1);
+                const card = deck[r];
+                deck[r] = deck[i];
+                deck[i] = card;
+            }
+            return deck.reverse();
+        }
+
+        function dealGame(_seed) {
+            seed = _seed;
+            console.log(shuffle());
+        }
+
+        dealGame(1);
+
+    </script>
+</head>
+<body>
+
+
+</body>
+</html>
