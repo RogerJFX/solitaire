@@ -4,26 +4,14 @@
     <meta charset="UTF-8">
     <title>Solitaire</title>
     <link rel="stylesheet" href="css/gameLayout.css?6">
-    <script src="js/test.js?6"></script>
-    <script src="js/constants.js?6"></script>
-    <script src="js/robot.js?1"></script>
-    <script src="js/ui.js?6"></script>
-    <script src="js/game.js?6"></script>
-    <script src="js/animator.js?6"></script>
+    <script src="js/constants.js?7"></script>
+    <script src="js/ui.js?8"></script>
+    <script src="js/game.js?7"></script>
+    <script src="js/animator.js?7"></script>
     <script>
         window.addEventListener('load', () => {
             function formatNum(num) {
                 return num < 10 ? '0' + num : num;
-            }
-            const modeCapture = location.href.match(/mode=(.*?)(&|$)/i);
-            const mode = modeCapture ? modeCapture[1] : 'default';
-            console.log(mode);
-            if("robot" === mode) {
-                window.addEventListener('keyup', (e) => {
-                    if(e.key === 'n') {
-                        $sol.robot.next();
-                    }
-                })
             }
             $sol.ui.setStage(document.getElementById('backstage'));
             $sol.ui.setSlots({

@@ -1,4 +1,4 @@
-$sol = window.$sol || {};
+window.$sol = window.$sol || {};
 (function Constants(self) {
 
     self.CARD_GRAPHIC_OFFSET = -8;
@@ -31,4 +31,4 @@ $sol = window.$sol || {};
     self.MILLIS_PER_STEP = 25;
 
 
-})($sol.constants = $sol.constants || {});
+})(window.$sol.constants = window.$sol.constants || {});

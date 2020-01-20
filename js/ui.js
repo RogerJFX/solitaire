@@ -1,5 +1,6 @@
-$sol = window.$sol || {};
+window.$sol = window.$sol || {};
 (function Ui(self) {
+    const $sol = window.$sol;
     Element.prototype.addClass = Element.prototype.addClass || function (clazz) {
         const existing = this.getAttribute('class');
         this.setAttribute('class', existing ? existing + ' ' + clazz : clazz);
@@ -25,10 +26,33 @@ $sol = window.$sol || {};
     };
 
     const targets = [];
+    const actionQueue = []; // Promises
+    let actionRunning = false;
     let stage;
     let slots;
     let closedHeapCoords, openHeapCoords;
     let openHeapZindex = 100;
+
+    function triggerActionQueue(force) {
+        if(actionRunning && !force) {
+            return;
+        }
+        const next = actionQueue.shift();
+        if(next) { // not undefined
+            actionRunning = true;
+            next().then(() => {
+                actionRunning = false;
+                triggerActionQueue(true);
+            });
+        } else {
+            actionRunning = false;
+        }
+    }
+
+    function addAction(action) {
+        actionQueue.push(action);
+        triggerActionQueue();
+    }
 
     function calculateBgPos(color, type) {
         const h = $sol.constants.CARD_GRAPHIC_OFFSET - color * $sol.constants.CARD_HEIGHT;
@@ -58,12 +82,18 @@ $sol = window.$sol || {};
     }
 
     self.doPushToTarget = (card, i) => {
-        $sol.game.pushToTarget(card, i);
-        card.withParent(null);
-        self.translateCard(card.getNode(), targets[i].offsetLeft, targets[i].offsetTop).then(() => {
-            $sol.game.checkAndTurn();
-            $sol.game.actionDone();
+        addAction(() => {
+            return new Promise(resolve => {
+                $sol.game.pushToTarget(card, i);
+                card.withParent(null);
+                self.translateCard(card.getNode(), targets[i].offsetLeft, targets[i].offsetTop).then(() => {
+                    $sol.game.checkAndTurn();
+                    $sol.game.actionDone(i);
+                    resolve();
+                });
+            })
         });
+
     };
 
     function findTargetTarget(node) {
@@ -209,19 +239,27 @@ $sol = window.$sol || {};
                 setTimeout(cb, triggerAfterAppendAll);
             }
         }
+        function getX(evt) {
+            return evt.touches ? evt.touches[0].clientX : evt.clientX;
+        }
+        function getY(evt) {
+            return evt.touches ? evt.touches[0].clientY : evt.clientY;
+        }
         node.onmousedown = (evt) => {
             $sol.game.mouseDown(1);
             const all = initAll(collectAll(node));
-            const startX = evt.clientX;
-            const startY = evt.clientY;
+            const startX = getX(evt);
+            const startY = getY(evt);
             const oldZIndex = node.style.zIndex;
             let moved = false;
-            document.onmousemove = (evtM) => {
-                const diffX = evtM.clientX - startX;
-                const diffY = evtM.clientY - startY;
+            function doMove (evtM) {
+                const diffX = getX(evtM) - startX;
+                const diffY = getY(evtM) - startY;
                 moveAll(all, diffX, diffY);
                 moved = moved || Math.abs(diffX) > 1 ||  Math.abs(diffY) > 1;
-            };
+            }
+            document.onmousemove = doMove;
+            node.ontouchmove = doMove;
             document.onmouseup = () => {
                 document.onmousemove = () => {};
                 document.onmouseup = () => {};
@@ -260,9 +298,13 @@ $sol = window.$sol || {};
                 }
                 return true;
             };
+            node.ontouchend = document.onmouseup;
             return true;
-        }
+        };
+        node.ontouchstart = node.onmousedown;
     };
+
+
 
     self.createNode = (props) => {
 
@@ -421,6 +463,7 @@ $sol = window.$sol || {};
         }).forEach(card => {
             addDoubleClick(card.getNode(), autoFindTargetTarget);
         });
+        actionRunning = false;
     }
 
-})($sol.ui = $sol.ui || {});
+})(window.$sol.ui = window.$sol.ui || {});

@@ -4,28 +4,17 @@
     <meta charset="UTF-8">
     <title>Solitaire</title>
     <link rel="stylesheet" href="css/gameLayout.css?6">
-    <script src="js/constants.js?6"></script>
-    <script src="js/robot.js?1"></script>
-    <script src="js/ui.js?6"></script>
-    <script src="js/game.js?6"></script>
-    <script src="js/animator.js?6"></script>
+    <script src="game.min.js?7"></script>
     <script>
+
+        let confirmNewGame, back, fastForward;
+
         window.addEventListener('load', () => {
             function formatNum(num) {
                 return num < 10 ? '0' + num : num;
             }
-            const modeCapture = location.href.match(/mode=(.*?)(&|$)/i);
-            const mode = modeCapture ? modeCapture[1] : 'default';
-            console.log(mode);
-            if("robot" === mode) {
-                window.addEventListener('keyup', (e) => {
-                    if(e.key === 'n') {
-                        $sol.robot.next();
-                    }
-                })
-            }
-            $sol.ui.setStage(document.getElementById('backstage'));
-            $sol.ui.setSlots({
+            window.$sol.ui.setStage(document.getElementById('backstage'));
+            window.$sol.ui.setSlots({
                 slotKreuz: document.getElementById('slotKreuz'),
                 slotPik: document.getElementById('slotPik'),
                 slotHerz: document.getElementById('slotHerz'),
@@ -33,25 +22,19 @@
                 closedHeap: document.getElementById('closedHeap'),
                 openHeap: document.getElementById('openHeap')
             });
-            $sol.game.init((nums) => {
+            window.$sol.game.init((nums) => {
                 document.getElementById('counterTile').innerHTML = formatNum(nums[0]) + ' | ' + formatNum(nums[1]);
                 document.getElementById('cashTile').innerHTML = nums[2] + '$';
             });
+            confirmNewGame = () => {
+                if(confirm('Sure a new game?')) {
+                    window.$sol.game.newGame();
+                }
+            };
+            back = window.$sol.game.historyBack;
+            fastForward = window.$sol.game.autoPushToTarget;
         });
 
-        function confirmNewGame() {
-            if(confirm('Sure a new game?')) {
-                $sol.game.newGame();
-            }
-        }
-
-        function back() {
-            $sol.game.historyBack();
-        }
-
-        function fastForward() {
-            $sol.game.autoPushToTarget();
-        }
     </script>
 </head>
 <body>

@@ -1,6 +1,6 @@
-$sol = window.$sol || {};
+window.$sol = window.$sol || {};
 (function Animator(self) {
-
+    const $sol = window.$sol;
     const nodes = [];
     let windowWidth, windowHeight, stageTop, stageLeft;
     let interval;
@@ -62,4 +62,4 @@ $sol = window.$sol || {};
         return self;
     }
 
-})($sol.animator = $sol.animator || {});
+})(window.$sol.animator = window.$sol.animator || {});
