@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no">
     <title>Solitaire</title>
     <link rel="stylesheet" href="css/gameLayout.css?6">
     <script src="game.min.js?7"></script>
@@ -9,30 +10,53 @@
 
         let confirmNewGame, back, fastForward;
 
+        function wait4Images() {
+            const images = ['img/card_deck_50.png', 'img/card_deck_back_50.png', 'img/card_deck_place_50.png'];
+            function loadImage(url, cb) {
+                const image = new Image();
+                image.addEventListener('load', cb);
+                image.src = url;
+            }
+            return new Promise(resolve => {
+                let c = images.length;
+                images.forEach(img => {
+                    loadImage(img, () => {
+                        if(--c === 0) {
+                            resolve();
+                        }
+                    })
+                })
+            });
+        }
+
         window.addEventListener('load', () => {
             function formatNum(num) {
                 return num < 10 ? '0' + num : num;
             }
-            window.$sol.ui.setStage(document.getElementById('backstage'));
-            window.$sol.ui.setSlots({
-                slotKreuz: document.getElementById('slotKreuz'),
-                slotPik: document.getElementById('slotPik'),
-                slotHerz: document.getElementById('slotHerz'),
-                slotKaro: document.getElementById('slotKaro'),
-                closedHeap: document.getElementById('closedHeap'),
-                openHeap: document.getElementById('openHeap')
+            wait4Images().then(() => {
+                document.getElementById('loading').style.display = 'none';
+                window.$sol.ui.setStage(document.getElementById('backstage'));
+                window.$sol.ui.setSlots({
+                    slotKreuz: document.getElementById('slotKreuz'),
+                    slotPik: document.getElementById('slotPik'),
+                    slotHerz: document.getElementById('slotHerz'),
+                    slotKaro: document.getElementById('slotKaro'),
+                    closedHeap: document.getElementById('closedHeap'),
+                    openHeap: document.getElementById('openHeap')
+                });
+                window.$sol.game.init((nums) => {
+                    document.getElementById('counterTile').innerHTML = formatNum(nums[0]) + ' | ' + formatNum(nums[1]);
+                    document.getElementById('cashTile').innerHTML = nums[2] + '$';
+                });
+                confirmNewGame = () => {
+                    if(confirm('Sure a new game?')) {
+                        window.$sol.game.newGame();
+                    }
+                };
+                back = window.$sol.game.historyBack;
+                fastForward = window.$sol.game.autoPushToTarget;
             });
-            window.$sol.game.init((nums) => {
-                document.getElementById('counterTile').innerHTML = formatNum(nums[0]) + ' | ' + formatNum(nums[1]);
-                document.getElementById('cashTile').innerHTML = nums[2] + '$';
-            });
-            confirmNewGame = () => {
-                if(confirm('Sure a new game?')) {
-                    window.$sol.game.newGame();
-                }
-            };
-            back = window.$sol.game.historyBack;
-            fastForward = window.$sol.game.autoPushToTarget;
+
         });
 
     </script>
@@ -55,8 +79,8 @@
             <button id="back" class="button" onclick="back();"><span>&#8249;</span></button>
             <button id="ff" class="button" onclick="fastForward();"><span>&#187;</span></button>
         </div>
-
     </div>
+    <div id="loading">Loading...</div>
 </div>
 
 </body>

@@ -2,10 +2,21 @@ body, html {
     background: #464;
     font-family: verdana, Arial, sans-serif;
     font-size:14px;
+
 }
 
 #backstage {
     position:relative;
+    top:16px;
+    margin: 0 auto;
+    width: 830px;
+}
+
+#loading {
+    color: white;
+    top: 200px;
+    text-align: center;
+    position: relative;
     margin: 0 auto;
     width: 830px;
 }
