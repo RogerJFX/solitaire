@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Solitaire</title>
+    <link rel="stylesheet" href="css/gameLayout.css?6">
+    <script src="js/multi/ui.js"></script>
+    <script src="js/multi/socket.js"></script>
+    <script src="js/multi/zooKeeper.js"></script>
+    <script src="js/constants.js?7"></script>
+    <script src="js/ui.js?8"></script>
+    <script src="js/game.js?7"></script>
+    <script src="js/animator.js?7"></script>
+    <script>
+        window.addEventListener('load', () => {
+            function formatNum(num) {
+                return num < 10 ? '0' + num : num;
+            }
+            $sol.ui.setStage(document.getElementById('backstage'));
+            $sol.ui.setSlots({
+                slotKreuz: document.getElementById('slotKreuz'),
+                slotPik: document.getElementById('slotPik'),
+                slotHerz: document.getElementById('slotHerz'),
+                slotKaro: document.getElementById('slotKaro'),
+                closedHeap: document.getElementById('closedHeap'),
+                openHeap: document.getElementById('openHeap')
+            });
+            $sol.game.init((nums) => {
+                document.getElementById('counterTile').innerHTML = formatNum(nums[0]) + ' | ' + formatNum(nums[1]);
+                document.getElementById('cashTile').innerHTML = nums[2] + '$';
+            });
+        });
+
+        function confirmNewGame() {
+            if(confirm('Sure a new game?')) {
+                $sol.game.newGame();
+            }
+        }
+
+        function back() {
+            $sol.game.historyBack();
+        }
+
+        function fastForward() {
+            $sol.game.autoPushToTarget();
+        }
+    </script>
+</head>
+<body>
+<div>
+    <div id="multiStage" style="display:none">
+        <div>
+            <span>Players online: </span>
+            <span id="playersOnline">0</span>
+            <span>, Rooms: </span>
+            <span id="roomsRunning">0</span>
+        </div>
+        <div id="createRoom">
+            <button onclick="$mult.ui.createRoom();">Create room</button>
+        </div>
+        <div id="roomsList" style="display:table"></div>
+        <div id="roomPlayerList" style="display:table"></div>
+    </div>
+    <div id="gameStage">
+    <div id="multiHeader">
+        <div>
+            <div>Roger</div>
+            <div class="num">2139$</div>
+            <div>waiting</div>
+        </div>
+        <div>
+            <div>Vollhonk</div>
+            <div class="num">-239$</div>
+            <div>waiting</div>
+        </div>
+        <div>
+            <div>Arschgeige</div>
+            <div class="num">239$</div>
+            <div>waiting</div>
+        </div>
+    </div>
+    <div id="backstage">
+        <div class="tile slot" id="slotKreuz"></div>
+        <div class="tile slot" id="slotPik"></div>
+        <div class="tile slot" id="slotHerz"></div>
+        <div class="tile slot" id="slotKaro"></div>
+
+        <div class="tile card heap" id="closedHeap"></div>
+        <div class="tile card heap" id="openHeap"></div>
+
+        <div class="tile adminWrapper">
+            <button id="nextGame" class="button" onclick="confirmNewGame();">Next Game</button>
+            <div class="tile counterTile" id="counterTile"></div>
+            <div class="tile counterTile" id="cashTile"></div>
+            <button id="back" class="button" onclick="back();"><span>&#8249;</span></button>
+            <button id="ff" class="button" onclick="fastForward();"><span>&#187;</span></button>
+        </div>
+    </div>
+    </div>
+</div>
+
+</body>
+</html>
