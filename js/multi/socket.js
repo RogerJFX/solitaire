@@ -3,9 +3,9 @@ $mult = window.$mult || {};
 
     const observerFns = {};
 
-    self.createConnection = name => {
-        create( "ws://localhost:9000/ws/solitaire", name).then(socketHandler => {
-            socketHandler.writeToSocket("howdy", {name: name})
+    self.createConnection = (hostName, port, playerName) => {
+        create( `ws://${hostName}:${port}/ws/solitaire`).then(socketHandler => {
+            socketHandler.writeToSocket("howdy", {str: playerName})
             self.writeToSocket = socketHandler.writeToSocket
         });
 
@@ -18,7 +18,6 @@ $mult = window.$mult || {};
         if(task !== 'ping' && task !== 'void') {
             const fn = observerFns[task];
             if(fn) {
-                console.log(message);
                 fn(message);
             } else {
                 console.error(`No observer found for ${task}`);

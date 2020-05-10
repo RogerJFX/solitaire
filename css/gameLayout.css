@@ -11,27 +11,69 @@ body, html {
     margin: 0 auto;
     width: 830px;
 }
+
+#chatDiv {
+
+    width:100%;
+    display:block;
+    position:fixed;
+    bottom:8px;
+}
+
+.chatInnerDiv {
+    margin: 0 auto;
+    width: 830px;
+}
+.chatInput {
+    width: 790px;
+    background: transparent;
+    color: white;
+    border: 1px solid #999;
+    border-bottom-color: #777;
+    border-right-color: #777;
+    border-radius: 4px;
+    margin-right: 4px;
+    height: 20px;
+    text-indent: 6px;
+}
 #multiHeader {
     color: white;
     min-height: 12px;
     top: 4px;
 }
 #multiHeader > div {
+    position:relative;
     display: inline-block;
-    width: 31%;
+    width: 28%;
     border-left: 1px solid #999;
     border-bottom: 1px solid #777;
     border-bottom-left-radius: 4px;
     color: #cdc;
+    height: 24px;
+    margin-right: 8px;
 }
 #multiHeader > div > div {
     display: inline-block;
     width: 16%;
-    padding: 0 6px 4px 4px;
+    padding: 4px 6px 4px 4px;
+    overflow: hidden;
 }
 
 #multiHeader > div :first-child{
     width: 45%;
+    white-space: nowrap;
+}
+
+.leaveRoomButton {
+    right: 10px;
+}
+
+.kickPlayerButton {
+    height: 18px !important;
+    width: 18px;
+    right: 0;
+    color: white !important;
+    padding: 0;
 }
 
 .num {
