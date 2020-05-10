@@ -34,10 +34,10 @@
             });
 
             const name = $mult.ui.prompt('Your name', 'Player');
-            //const remote = '148.251.6.88';
-            const remote = 'localhost';
-            //const port = 9003;
-            const port = 9000;
+            const remote = '148.251.6.88';
+            //const remote = 'localhost';
+            const port = 9003;
+            //const port = 9000;
             // $mult.socket.createConnection(window.location.hostname, name);
             $mult.socket.createConnection(remote, port, name);
             sendPoints = (points) => $mult.zooKeeper.sendGameState(`points::${points}`);
@@ -47,10 +47,12 @@
                 document.getElementById('multiStage').style.display='none';
                 document.getElementById('multiHeader').style.display='block';
                 document.getElementById('gameStage').style.display='block';
+                document.getElementById('nextGame').innerHTML = 'Next Game';
             })
         });
 
         function confirmNewGame() {
+            document.getElementById('nextGame').innerHTML = 'Waiting';
             $mult.zooKeeper.sendGameState('next');
             // if(confirm('Sure a new game?')) {
             //     $sol.game.newGame();
@@ -98,13 +100,13 @@
                 <button id="nextGame" class="button" onclick="confirmNewGame();">Next Game</button>
                 <div class="tile counterTile" id="counterTile"></div>
                 <div class="tile counterTile" id="cashTile"></div>
-                <button id="back" class="button" onclick="back();"><span>&#8249;</span></button>
+                <button id="back" class="button" disabled onclick="alert('disabled');"><span>&#8249;</span></button>
                 <button id="ff" class="button" onclick="fastForward();"><span>&#187;</span></button>
             </div>
         </div>
         <div id="chatDiv">
             <div class="chatInnerDiv">
-                <div id="chatOutput" style="height:120px;max-height:120px;overflow:auto;color:white;"></div>
+                <div id="chatOutput" class="chatOutput"></div>
                 <input id="chatInput" class="chatInput"/>
                 <button id="chatSend" class="button">&#8626;</button>
             </div>

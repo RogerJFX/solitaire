@@ -73,7 +73,7 @@ $mult = window.$mult || {};
         playersData.forEach(player => {
             const row = document.createElement('DIV');
             row.setAttribute('style', 'display:table-row');
-            createAndAppendCell(player[1], row, player[0]);
+            createAndAppendCell(player[1], row, player[0], player[2]);
             node.appendChild(row);
             if(master) {
                 const emptyCell = createAndAppendCell('', row);
@@ -157,7 +157,7 @@ $mult = window.$mult || {};
         $mult.zooKeeper.kickPlayerFromRoom(uuid);
     }
 
-    function createAndAppendCell(value, row, uuid) {
+    function createAndAppendCell(value, row, uuid, waiting) {
         const cell = document.createElement('DIV');
         cell.setAttribute('style', 'display:table-cell;padding:4px 12px 4px 4px;');
         if(uuid) {
@@ -165,6 +165,11 @@ $mult = window.$mult || {};
         }
         cell.innerHTML = value;
         row.appendChild(cell);
+        if(uuid && waiting) {
+            const span = document.createElement('SPAN');
+            span.innerHTML = '  ready';
+            cell.appendChild(span);
+        }
         return cell;
     }
 

@@ -101,9 +101,9 @@ $mult = window.$mult || {};
         $mult.socket.writeToSocket('roomLeave', {});
     };
 
-    self.startGame = _ => {
-        $mult.socket.writeToSocket('startGame', {});
-    }
+    // self.startGame = _ => {
+    //     $mult.socket.writeToSocket('startGame', {});
+    // }
 
     self.kickPlayerFromRoom = (uuid) => {
         $mult.socket.writeToSocket('roomKick', {uuid: uuid});
