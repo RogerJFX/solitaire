@@ -13,21 +13,22 @@ body, html {
 }
 
 #chatDiv {
-
+    z-index: -1;
     width:100%;
     display:block;
     position:fixed;
     bottom:8px;
+
 }
 
 .chatInnerDiv {
     margin: 0 auto;
     width: 830px;
+    color: #cdc;
 }
 .chatInput {
     width: 790px;
     background: transparent;
-    color: white;
     border: 1px solid #999;
     border-bottom-color: #777;
     border-right-color: #777;
@@ -35,6 +36,18 @@ body, html {
     margin-right: 4px;
     height: 20px;
     text-indent: 6px;
+    color: #cdc;
+}
+.chatOutput {
+    height:220px;
+    max-height:220px;
+    overflow:auto;
+    -ms-overflow-style: none;
+    overflow-x: hidden;
+    margin-bottom: 8px;
+}
+.chatOutput::-webkit-scrollbar {
+    display: none;
 }
 #multiHeader {
     color: white;
