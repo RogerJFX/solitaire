@@ -291,7 +291,7 @@ window.$sol = window.$sol || {};
         }
     }
 
-    function mixCards() {
+    function mixCards(shuffled) {
         const tmpCards = [];
 
         function rand(arr) {
@@ -316,7 +316,7 @@ window.$sol = window.$sol || {};
             return cardIndices;
         }
 
-        toCards(shuffle()).forEach(c => {
+        toCards(shuffled || shuffle()).forEach(c => {
             tmpCards.push(new Card(c[0], c[1]));
         });
 
@@ -441,7 +441,7 @@ window.$sol = window.$sol || {};
     self.flipNextHeapCard = null;
     self.traverseCards = null;
 
-    self.newGame = () => {
+    self.newGame = (shuffled) => {
         mouseDownCount = 0;
         cash -= 52;
         let i, j;
@@ -454,7 +454,7 @@ window.$sol = window.$sol || {};
         heap.traverseCards(card => {
             $sol.ui.removeFromStage(card.getNode());
         });
-        heap.init(mixCards());
+        heap.init(mixCards(shuffled));
         const tmpOpenCards = [];
         for (i = 0; i < $sol.constants.NUM_LANES; i++) {
             nullCards.push(new Card(null, null).withProps(i, -1).createNode(true));
@@ -490,7 +490,13 @@ window.$sol = window.$sol || {};
         heap.setCounterFn(counterFn);
         self.traverseCards = heap.traverseCards;
         self.flipNextHeapCard = heap.flipNext;
-        self.newGame();
+        $mult.zooKeeper.addNextGameObserver(shuffled => self.newGame(shuffled));
+        $mult.zooKeeper.addPlayersDataObserver(data => {
+            if(data === null) {
+                cash = 0;
+            }
+        })
+        //self.newGame();
     };
 
     self.Card = Card;

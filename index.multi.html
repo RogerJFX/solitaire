@@ -7,11 +7,13 @@
     <script src="js/multi/ui.js"></script>
     <script src="js/multi/socket.js"></script>
     <script src="js/multi/zooKeeper.js"></script>
+    <script src="js/multi/gameUi.js"></script>
     <script src="js/constants.js?7"></script>
     <script src="js/ui.js?8"></script>
     <script src="js/game.js?7"></script>
     <script src="js/animator.js?7"></script>
     <script>
+        let sendPoints;
         window.addEventListener('load', () => {
             function formatNum(num) {
                 return num < 10 ? '0' + num : num;
@@ -28,13 +30,31 @@
             $sol.game.init((nums) => {
                 document.getElementById('counterTile').innerHTML = formatNum(nums[0]) + ' | ' + formatNum(nums[1]);
                 document.getElementById('cashTile').innerHTML = nums[2] + '$';
+                $mult.zooKeeper.sendGameState(`points::${nums[2]}`);
             });
+
+            const name = $mult.ui.prompt('Your name', 'Player');
+            //const remote = '148.251.6.88';
+            const remote = 'localhost';
+            //const port = 9003;
+            const port = 9000;
+            // $mult.socket.createConnection(window.location.hostname, name);
+            $mult.socket.createConnection(remote, port, name);
+            sendPoints = (points) => $mult.zooKeeper.sendGameState(`points::${points}`);
+            $mult.ui.init();
+            $sol.mult.init();
+            $mult.zooKeeper.addNextGameObserver(() => {
+                document.getElementById('multiStage').style.display='none';
+                document.getElementById('multiHeader').style.display='block';
+                document.getElementById('gameStage').style.display='block';
+            })
         });
 
         function confirmNewGame() {
-            if(confirm('Sure a new game?')) {
-                $sol.game.newGame();
-            }
+            $mult.zooKeeper.sendGameState('next');
+            // if(confirm('Sure a new game?')) {
+            //     $sol.game.newGame();
+            // }
         }
 
         function back() {
@@ -48,7 +68,7 @@
 </head>
 <body>
 <div>
-    <div id="multiStage" style="display:none">
+    <div id="multiStage" style="display:block;color:white">
         <div>
             <span>Players online: </span>
             <span id="playersOnline">0</span>
@@ -60,42 +80,35 @@
         </div>
         <div id="roomsList" style="display:table"></div>
         <div id="roomPlayerList" style="display:table"></div>
+
     </div>
+
     <div id="gameStage">
-    <div id="multiHeader">
-        <div>
-            <div>Roger</div>
-            <div class="num">2139$</div>
-            <div>waiting</div>
-        </div>
-        <div>
-            <div>Vollhonk</div>
-            <div class="num">-239$</div>
-            <div>waiting</div>
-        </div>
-        <div>
-            <div>Arschgeige</div>
-            <div class="num">239$</div>
-            <div>waiting</div>
-        </div>
-    </div>
-    <div id="backstage">
-        <div class="tile slot" id="slotKreuz"></div>
-        <div class="tile slot" id="slotPik"></div>
-        <div class="tile slot" id="slotHerz"></div>
-        <div class="tile slot" id="slotKaro"></div>
+        <div id="multiHeader" style="display:none"></div>
+        <div id="backstage">
+            <div class="tile slot" id="slotKreuz"></div>
+            <div class="tile slot" id="slotPik"></div>
+            <div class="tile slot" id="slotHerz"></div>
+            <div class="tile slot" id="slotKaro"></div>
 
-        <div class="tile card heap" id="closedHeap"></div>
-        <div class="tile card heap" id="openHeap"></div>
+            <div class="tile card heap" id="closedHeap"></div>
+            <div class="tile card heap" id="openHeap"></div>
 
-        <div class="tile adminWrapper">
-            <button id="nextGame" class="button" onclick="confirmNewGame();">Next Game</button>
-            <div class="tile counterTile" id="counterTile"></div>
-            <div class="tile counterTile" id="cashTile"></div>
-            <button id="back" class="button" onclick="back();"><span>&#8249;</span></button>
-            <button id="ff" class="button" onclick="fastForward();"><span>&#187;</span></button>
+            <div class="tile adminWrapper">
+                <button id="nextGame" class="button" onclick="confirmNewGame();">Next Game</button>
+                <div class="tile counterTile" id="counterTile"></div>
+                <div class="tile counterTile" id="cashTile"></div>
+                <button id="back" class="button" onclick="back();"><span>&#8249;</span></button>
+                <button id="ff" class="button" onclick="fastForward();"><span>&#187;</span></button>
+            </div>
         </div>
-    </div>
+        <div id="chatDiv">
+            <div class="chatInnerDiv">
+                <div id="chatOutput" style="height:120px;max-height:120px;overflow:auto;color:white;"></div>
+                <input id="chatInput" class="chatInput"/>
+                <button id="chatSend" class="button">&#8626;</button>
+            </div>
+        </div>
     </div>
 </div>
 
