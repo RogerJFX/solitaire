@@ -22,18 +22,18 @@ $mult = window.$mult || {};
         document.getElementById('roomPlayerList').style.display = 'none';
         document.getElementById('createRoom').style.display = 'block';
         const node = document.getElementById('roomsList');
-        node.style.display = 'block';
+        node.style.display = 'table';
         node.innerHTML = '';
         const row = document.createElement('DIV');
-        row.setAttribute('style', 'display:table-row;font-weight:bold');
-        createAndAppendCell('Raum', row);
+        row.setAttribute('style', 'font-weight:bold');
+        createAndAppendCell('Room', row);
         createAndAppendCell('Max. players', row);
         createAndAppendCell('Curr. players', row);
         createAndAppendCell('', row);
         node.appendChild(row);
+        let c = 0;
         roomsArray.forEach(room => {
             const row = document.createElement('DIV');
-            row.setAttribute('style', 'display:table-row');
             createAndAppendCell(room[1], row);
             createAndAppendCell(room[2], row);
             createAndAppendCell(room[3], row);
@@ -43,7 +43,11 @@ $mult = window.$mult || {};
                 const button = document.createElement('BUTTON');
                 button.onclick = () => enterRoom(room[0]);
                 button.innerHTML = 'Enter';
+                button.addClass('button').addClass('relButton');
                 emptyCell.appendChild(button);
+            }
+            if(++c % 2 === 0) {
+                row.addClass('even');
             }
         });
     }
@@ -52,19 +56,23 @@ $mult = window.$mult || {};
         document.getElementById('createRoom').style.display = 'none';
         document.getElementById('roomsList').style.display = 'none';
         const node = document.getElementById('roomPlayerList');
-        node.style.display = 'block';
+        node.style.display = 'table';
         node.innerHTML = '';
         const header = document.createElement('DIV');
-        header.innerHTML = roomData[1]; // Name
+        header.innerHTML = 'You are in Room: ' + roomData[1]; // Name
+        header.style.fontWeight = 'bold';
         node.appendChild(header);
 
         const buttons = document.createElement('DIV');
         const leaveButton = document.createElement('BUTTON');
         leaveButton.innerHTML = 'Leave room';
         leaveButton.onclick = leaveRoom;
+        leaveButton.addClass('button').addClass('relButton');
         const startButton = document.createElement('BUTTON');
         startButton.innerHTML = 'I am Ready';
         startButton.onclick = startGame;
+        startButton.addClass('button').addClass('relButton');
+        startButton.style.marginLeft = '12px'
         buttons.appendChild(leaveButton);
         buttons.appendChild(startButton);
         node.appendChild(buttons);
@@ -72,17 +80,21 @@ $mult = window.$mult || {};
         let c = 0;
         playersData.forEach(player => {
             const row = document.createElement('DIV');
-            row.setAttribute('style', 'display:table-row');
+            // row.setAttribute('style', 'display:table-row');
             createAndAppendCell(player[1], row, player[0], player[2]);
             node.appendChild(row);
             if(master) {
                 const emptyCell = createAndAppendCell('', row);
-                if(c++ > 0) {
+                if(c > 0) {
                     const button = document.createElement('BUTTON');
                     button.onclick = () => kickPlayerFromRoom(player[0]);
                     button.innerHTML = 'Kick';
+                    button.addClass('button').addClass('relButton');
                     emptyCell.appendChild(button);
                 }
+            }
+            if(++c % 2 === 0) {
+                row.addClass('even');
             }
         });
         document.getElementById('chatInput').onkeyup = (evt) => {
@@ -124,7 +136,7 @@ $mult = window.$mult || {};
             const chatDiv = document.getElementById('chatDiv');
             const chatOutput = document.getElementById('chatOutput');
             if(data === null) {
-                chatDiv.style.display = 'none';
+                // chatDiv.style.display = 'none';
                 chatOutput.innerHTML = '';
             } else {
                 chatDiv.style.display = 'block';
@@ -159,7 +171,7 @@ $mult = window.$mult || {};
 
     function createAndAppendCell(value, row, uuid, waiting) {
         const cell = document.createElement('DIV');
-        cell.setAttribute('style', 'display:table-cell;padding:4px 12px 4px 4px;');
+
         if(uuid) {
             cell.setAttribute('id', `player_${uuid}`);
         }

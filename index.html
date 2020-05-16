@@ -2,85 +2,123 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="user-scalable=no">
     <title>Solitaire</title>
     <link rel="stylesheet" href="css/gameLayout.css?6">
-    <script src="game.min.js?7"></script>
+    <script src="js/multi/ui.js"></script>
+    <script src="js/multi/socket.js"></script>
+    <script src="js/multi/zooKeeper.js"></script>
+    <script src="js/multi/gameUi.js"></script>
+    <script src="js/constants.js?7"></script>
+    <script src="js/ui.js?8"></script>
+    <script src="js/game.js?7"></script>
+    <script src="js/animator.js?7"></script>
     <script>
-
-        let confirmNewGame, back, fastForward;
-
-        function wait4Images() {
-            const images = ['img/card_deck_50.png', 'img/card_deck_back_50.png', 'img/card_deck_place_50.png'];
-            function loadImage(url, cb) {
-                const image = new Image();
-                image.addEventListener('load', cb);
-                image.src = url;
-            }
-            return new Promise(resolve => {
-                let c = images.length;
-                images.forEach(img => {
-                    loadImage(img, () => {
-                        if(--c === 0) {
-                            resolve();
-                        }
-                    })
-                })
-            });
-        }
-
+        let sendPoints;
         window.addEventListener('load', () => {
             function formatNum(num) {
                 return num < 10 ? '0' + num : num;
             }
-            wait4Images().then(() => {
-                document.getElementById('loading').style.display = 'none';
-                window.$sol.ui.setStage(document.getElementById('backstage'));
-                window.$sol.ui.setSlots({
-                    slotKreuz: document.getElementById('slotKreuz'),
-                    slotPik: document.getElementById('slotPik'),
-                    slotHerz: document.getElementById('slotHerz'),
-                    slotKaro: document.getElementById('slotKaro'),
-                    closedHeap: document.getElementById('closedHeap'),
-                    openHeap: document.getElementById('openHeap')
-                });
-                window.$sol.game.init((nums) => {
-                    document.getElementById('counterTile').innerHTML = formatNum(nums[0]) + ' | ' + formatNum(nums[1]);
-                    document.getElementById('cashTile').innerHTML = nums[2] + '$';
-                });
-                confirmNewGame = () => {
-                    if(confirm('Sure a new game?')) {
-                        window.$sol.game.newGame();
-                    }
-                };
-                back = window.$sol.game.historyBack;
-                fastForward = window.$sol.game.autoPushToTarget;
+            $sol.ui.setStage(document.getElementById('backstage'));
+            $sol.ui.setSlots({
+                slotKreuz: document.getElementById('slotKreuz'),
+                slotPik: document.getElementById('slotPik'),
+                slotHerz: document.getElementById('slotHerz'),
+                slotKaro: document.getElementById('slotKaro'),
+                closedHeap: document.getElementById('closedHeap'),
+                openHeap: document.getElementById('openHeap')
+            });
+            $sol.game.init((nums) => {
+                document.getElementById('counterTile').innerHTML = formatNum(nums[0]) + ' | ' + formatNum(nums[1]);
+                document.getElementById('cashTile').innerHTML = nums[2] + '$';
+                $mult.zooKeeper.sendGameState(`points::${nums[2]}`);
             });
 
+            const name = $mult.ui.prompt('Your name', 'Player');
+            const remote = '148.251.6.88';
+            //const remote = 'localhost';
+            const port = 9003;
+            //const port = 9000;
+            // $mult.socket.createConnection(window.location.hostname, name);
+            $mult.socket.createConnection(remote, port, name);
+            sendPoints = (points) => $mult.zooKeeper.sendGameState(`points::${points}`);
+            $mult.ui.init();
+            $sol.mult.init();
+            $mult.zooKeeper.addNextGameObserver(() => {
+                document.getElementById('multiStage').style.display='none';
+                document.getElementById('darkLayer').style.display='none';
+                document.getElementById('multiHeader').style.display='block';
+                document.getElementById('gameStage').style.display='block';
+                document.getElementById('nextGame').innerHTML = 'Next Game';
+                document.getElementById('chatDiv').style.zIndex = '-1';
+            });
+            document.getElementById('chatDiv').style.zIndex = '10002';
         });
 
+        function confirmNewGame() {
+            document.getElementById('nextGame').innerHTML = 'Waiting';
+            $mult.zooKeeper.sendGameState('next');
+            // if(confirm('Sure a new game?')) {
+            //     $sol.game.newGame();
+            // }
+        }
+
+        function back() {
+            $sol.game.historyBack();
+        }
+
+        function fastForward() {
+            $sol.game.autoPushToTarget();
+        }
     </script>
 </head>
 <body>
+
 <div>
-    <div id="backstage">
-        <div class="tile slot" id="slotKreuz"></div>
-        <div class="tile slot" id="slotPik"></div>
-        <div class="tile slot" id="slotHerz"></div>
-        <div class="tile slot" id="slotKaro"></div>
-
-        <div class="tile card heap" id="closedHeap"></div>
-        <div class="tile card heap" id="openHeap"></div>
-
-        <div class="tile adminWrapper">
-            <button id="nextGame" class="button" onclick="confirmNewGame();">New Game</button>
-            <div class="tile counterTile" id="counterTile"></div>
-            <div class="tile counterTile" id="cashTile"></div>
-            <button id="back" class="button" onclick="back();"><span>&#8249;</span></button>
-            <button id="ff" class="button" onclick="fastForward();"><span>&#187;</span></button>
+    <div id="darkLayer"></div>
+    <div id="multiStage">
+        <div class="innerDiv">
+            <div style="margin-bottom: 16px;">
+                <span>Players online: </span>
+                <span id="playersOnline">0</span>
+                <span> | </span>
+                <span>Rooms: </span>
+                <span id="roomsRunning">0</span>
+            </div>
+            <div id="createRoom" style="padding: 6px 0 6px 0">
+                <button class="button relButton" onclick="$mult.ui.createRoom();">Create room</button>
+            </div>
+            <div id="roomsList" class="table"></div>
+            <div id="roomPlayerList" class="table"></div>
         </div>
     </div>
-    <div id="loading">Loading...</div>
+
+    <div id="gameStage">
+        <div id="multiHeader" class= "innerDiv" style="display:none"></div>
+        <div id="backstage" class= "innerDiv">
+            <div class="tile slot" id="slotKreuz"></div>
+            <div class="tile slot" id="slotPik"></div>
+            <div class="tile slot" id="slotHerz"></div>
+            <div class="tile slot" id="slotKaro"></div>
+
+            <div class="tile card heap" id="closedHeap"></div>
+            <div class="tile card heap" id="openHeap"></div>
+
+            <div class="tile adminWrapper">
+                <button id="nextGame" class="button" onclick="confirmNewGame();">Next Game</button>
+                <div class="tile counterTile" id="counterTile"></div>
+                <div class="tile counterTile" id="cashTile"></div>
+                <button id="back" class="button" disabled onclick="alert('disabled');"><span>&#8249;</span></button>
+                <button id="ff" class="button" onclick="fastForward();"><span>&#187;</span></button>
+            </div>
+        </div>
+        <div id="chatDiv">
+            <div class="chatInnerDiv">
+                <div id="chatOutput" class="chatOutput"></div>
+                <input id="chatInput" class="chatInput"/>
+                <button id="chatSend" class="button">&#8626;</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 </body>
