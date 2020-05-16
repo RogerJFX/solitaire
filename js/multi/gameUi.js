@@ -7,7 +7,9 @@ $sol = window.$sol || {};
             parentNode.innerHTML = '';
             if(playersData === null) {
                 document.getElementById('multiStage').style.display = 'block';
-                document.getElementById('gameStage').style.display = 'none';
+                document.getElementById('darkLayer').style.display = 'block';
+                document.getElementById('chatDiv').style.zIndex = '10002';
+                // document.getElementById('gameStage').style.display = 'none';
             } else {
                 playersData.filter(playerData => playerData[0] !== myUuid).forEach(playerData => {
                     const n = document.createElement('DIV');

@@ -2,20 +2,18 @@ window.$sol = window.$sol || {};
 (function Ui(self) {
     const $sol = window.$sol;
     Element.prototype.addClass = Element.prototype.addClass || function (clazz) {
-        const existing = this.getAttribute('class');
-        this.setAttribute('class', existing ? existing + ' ' + clazz : clazz);
+        this.classList.add(clazz)
         return this;
     };
 
     Element.prototype.removeClass = Element.prototype.removeClass || function (clazz) {
-        this.setAttribute('class',
-            this.getAttribute('class').split(' ').filter(item => item !== clazz).join(' ')
-        );
+        this.classList.remove(clazz)
         return this;
     };
 
     Element.prototype.hasClass = Element.prototype.hasClass || function (clazz) {
-        return this.getAttribute('class').split(' ').find(item => item === clazz) === clazz;
+        return this.classList.includes(clazz);
+        // return this.getAttribute('class').split(' ').includes(clazz);
     };
 
     Element.prototype.setCard = function (card) {
