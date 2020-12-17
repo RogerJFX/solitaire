@@ -405,6 +405,7 @@ window.$sol = window.$sol || {};
     };
 
     self.actionDone = (t) => {
+        $sol.ui.fillOpenThumbs();
         if (!heap.flipIfEmptyOpenHeap()) {
             $sol.ui.actionDone();
         }

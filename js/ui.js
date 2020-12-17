@@ -310,8 +310,6 @@ window.$sol = window.$sol || {};
         node.ontouchstart = node.onmousedown;
     };
 
-
-
     self.createNode = (props) => {
 
         const node = document.createElement('DIV');
@@ -470,6 +468,24 @@ window.$sol = window.$sol || {};
             addDoubleClick(card.getNode(), autoFindTargetTarget);
         });
         actionRunning = false;
+    }
+
+    self.fillOpenThumbs = () => {
+        document.getElementById("openThumbs").innerHTML = "";
+        function createNode(card) {
+            const el = document.createElement('DIV');
+            el.addClass("tile thumb");
+            el.style.backgroundPosition = card.getNode().querySelector('.inner .cardFront').style.backgroundPosition;
+            const innerEl = document.createElement('DIV');
+            innerEl.addClass('cardBack');
+            el.appendChild(innerEl);
+            document.getElementById("openThumbs").prepend(el);
+        }
+        $sol.game.traverseCards((card) => {
+            if(card.state === $sol.constants.CARD_STATE_ON_HEAP && !card.isOpen()) {
+                createNode(card);
+            }
+        });
     }
 
 })(window.$sol.ui = window.$sol.ui || {});
