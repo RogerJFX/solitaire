@@ -265,7 +265,13 @@ window.$sol = window.$sol || {};
                 document.onmouseup = () => {};
                 node.style.zIndex = oldZIndex;
                 if(!moved) {
-                    node.style.zIndex = node.getCard().zIndex + '';
+                    (function resetZIndizes(node) {
+                        node.style.zIndex = node.getCard().zIndex + '';
+                        const next = node.getCard().getNextAppendingCard();
+                        if(next) {
+                            resetZIndizes(next.getNode());
+                        }
+                    })(node);
                     return;
                 }
                 if(all.length === 1) {
