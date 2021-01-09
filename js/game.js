@@ -187,12 +187,15 @@ window.$sol = window.$sol || {};
                     }
                 }
 
-                notTurned.forEach(item => item.card.deserialize(item).then(() => {
-                    resolveIfFinished();
-                }));
-                setTimeout(() => {
-                    turned.forEach(item => item.card.deserialize(item).then(() => resolveIfFinished()));
-                }, 40);
+                function deserializeCard(item) {
+                    item.card.deserialize(item).then(_ => resolveIfFinished());
+                }
+
+                new Promise(iResolve => {
+                    notTurned.forEach(deserializeCard);
+                    iResolve();
+                }).then(_ => turned.forEach(deserializeCard));
+
             });
         };
         this.nextCard = () => {
