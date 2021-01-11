@@ -227,14 +227,14 @@ window.$sol = window.$sol || {};
             }
             return cards;
         };
-        this.flipIfEmptyOpenHeap = () => {
+        this.flipIfEmptyOpenHeap = _ => {
             const topOpenCard = cards.find(card => card.state === $sol.constants.CARD_STATE_ON_HEAP && card.isOpen());
             if (!topOpenCard) {
                 return this.flipNext();
             }
             return false;
         };
-        this.setCounterFn = (fn) => {
+        this.setCounterFn = fn => {
             counterFn = fn;
         };
         this.triggerDone = () => {
