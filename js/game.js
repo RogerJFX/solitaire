@@ -7,6 +7,7 @@ window.$sol = window.$sol || {};
     let targets = [];
     let cash = 0;
     let mouseDownCount = 0;
+    let autoRunning = false;
 
     function Card(color, type) {
         const me = this;
@@ -381,12 +382,18 @@ window.$sol = window.$sol || {};
         return false;
     };
 
-    self.autoPushToTarget = () => {
+    self.autoPushToTarget = (force) => {
+		if(autoRunning && !force) {
+			return;
+		}
+		autoRunning = true;
         self.mouseDown(1);
         const success = self.findTopLaneCards().find(card => self.autoFindTarget(card, $sol.ui.doPushToTarget));
         if (success) {
-            setTimeout(self.autoPushToTarget, $sol.constants.AUTO_PLAY_TIMEOUT);
-        }
+            setTimeout(() => self.autoPushToTarget(true), $sol.constants.AUTO_PLAY_TIMEOUT);
+        } else {
+			autoRunning = false;
+		}
     };
 
     self.removeCardFromTarget = (card) => {
