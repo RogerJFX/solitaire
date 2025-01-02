@@ -449,6 +449,10 @@ window.$sol = window.$sol || {};
         node.parentElement.removeChild(node);
     };
 
+    self.removeGhosts = () => {
+        document.querySelectorAll('.ghostCard').forEach(c => self.removeFromStage(c));
+    }
+
     self.setSlots = (_slots) => {
         slots = _slots;
         closedHeapCoords = {x: slots.closedHeap.offsetLeft, y: slots.closedHeap.offsetTop};

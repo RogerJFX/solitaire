@@ -452,6 +452,7 @@ window.$sol = window.$sol || {};
     self.traverseCards = null;
 
     self.newGame = () => {
+        $sol.ui.removeGhosts(); // remove the lately found leak
         mouseDownCount = 0;
         cash -= 52;
         let i, j;
