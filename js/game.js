@@ -296,8 +296,6 @@ window.$sol = window.$sol || {};
     }
 
     function mixCards() {
-        const tmpCards = [];
-
         function rand(arr) {
             let candidate = Math.floor(Math.random() * $sol.constants.NUM_CARDS);
             if (arr.includes(candidate)) {
@@ -320,21 +318,11 @@ window.$sol = window.$sol || {};
             return cardIndices;
         }
 
-        toCards(shuffle()).forEach(c => {
-            tmpCards.push(new Card(c[0], c[1]));
-        });
-
-        return tmpCards;
+        return toCards(shuffle()).map(c => new Card(c[0], c[1]));
     }
 
     function checkTargetsFullAndAnimate() {
-        let done = true;
-        targets.forEach(target => {
-            if(!target.checkDone()) {
-                done = false;
-            }
-        });
-        if(done) {
+        if(targets.reduce((a, target) => !(!target.checkDone() || !a), true)) {
             window.setTimeout(()=> {
                 let i = 0;
                 const animator = $sol.animator.init();
@@ -452,7 +440,7 @@ window.$sol = window.$sol || {};
     self.traverseCards = null;
 
     self.newGame = () => {
-        $sol.ui.removeGhosts(); // remove the lately found leak
+        $sol.ui.setupUi(); // remove the lately found leak
         mouseDownCount = 0;
         cash -= 52;
         let i, j;

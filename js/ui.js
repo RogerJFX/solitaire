@@ -449,7 +449,8 @@ window.$sol = window.$sol || {};
         node.parentElement.removeChild(node);
     };
 
-    self.removeGhosts = () => {
+    self.setupUi = () => {
+        openHeapZindex = 100;
         document.querySelectorAll('.ghostCard').forEach(c => self.removeFromStage(c));
     }
 
