@@ -328,6 +328,7 @@ window.$sol = window.$sol || {};
     }
 
     function checkTargetsFullAndAnimate() {
+        $sol.ui.setBlocked(false);
         if(targets.reduce((a, target) => !(!target.checkDone() || !a), true)) {
             window.setTimeout(()=> {
                 let i = 0;
@@ -429,15 +430,19 @@ window.$sol = window.$sol || {};
             history[history.length - 1] = [mouseDownCount, snapshot];
         } else {
             history.push([mouseDownCount, snapshot]);
+            // $sol.ui.setBlocked(false);
         }
     }
 
     self.historyBack = () => {
-        if (history.length > 1) {
-            history.pop();
-            heap.fromSnapshot(history.pop()[1]).then(() => {
-                self.actionDone();
-            });
+        if(!$sol.ui.isBlocked()) {
+            if (history.length > 1) {
+                history.pop();
+                heap.fromSnapshot(history.pop()[1]).then(() => {
+                    self.actionDone();
+                });
+                $sol.ui.setBlocked(true);
+            }
         }
     };
 

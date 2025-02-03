@@ -475,4 +475,18 @@ window.$sol = window.$sol || {};
         actionRunning = false;
     }
 
+    const historyObservers = [];
+    let blocked = false;
+
+    self.setBlocked = (block) => {
+        blocked = block;
+        historyObservers.forEach(obs => obs(!blocked));
+    }
+
+    self.isBlocked = _ => blocked;
+
+    self.addHistoryObserver = fn => {
+        historyObservers.push(fn);
+    }
+
 })(window.$sol.ui = window.$sol.ui || {});

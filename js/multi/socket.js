@@ -3,8 +3,8 @@ $mult = window.$mult || {};
 
     const observerFns = {};
 
-    self.createConnection = (hostName, port, playerName) => {
-        create( `ws://${hostName}:${port}/ws/solitaire`).then(socketHandler => {
+    self.createConnection = (protocol, hostName, port, playerName) => {
+        create( `${protocol}://${hostName}:${port}/ws/solitaire`).then(socketHandler => {
             socketHandler.writeToSocket("howdy", {str: playerName})
             self.writeToSocket = socketHandler.writeToSocket
         });

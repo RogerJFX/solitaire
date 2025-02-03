@@ -10,10 +10,11 @@
     <script src="js/multi/gameUi.js"></script>
     <script src="js/constants.js?7"></script>
     <script src="js/ui.js?8"></script>
-    <script src="js/game.js?7"></script>
+    <script src="js/game.js?8"></script>
     <script src="js/animator.js?7"></script>
     <script>
         let sendPoints;
+        let blocked = false;
         window.addEventListener('load', () => {
             function formatNum(num) {
                 return num < 10 ? '0' + num : num;
@@ -34,16 +35,18 @@
             });
 
             const name = $mult.ui.prompt('Your name', 'Player');
-            const remote = '148.251.6.88';
+            const remote = '7fx.de';
             //const remote = 'localhost';
-            const port = 9003;
+            const port = 443;
             //const port = 9000;
             // $mult.socket.createConnection(window.location.hostname, name);
-            $mult.socket.createConnection(remote, port, name);
+            $mult.socket.createConnection('wss', remote, port, name);
             sendPoints = (points) => $mult.zooKeeper.sendGameState(`points::${points}`);
             $mult.ui.init();
             $sol.mult.init();
             $mult.zooKeeper.addNextGameObserver(() => {
+                blocked = false;
+                $sol.ui.setBlocked(false);
                 document.getElementById('multiStage').style.display='none';
                 document.getElementById('darkLayer').style.display='none';
                 document.getElementById('multiHeader').style.display='block';
@@ -52,22 +55,37 @@
                 document.getElementById('chatDiv').style.zIndex = '-1';
             });
             document.getElementById('chatDiv').style.zIndex = '10002';
+            const historyBackButton = document.getElementById('back');
+            $sol.ui.addHistoryObserver(avail => {
+                if(avail) {
+                    historyBackButton.removeClass('historyDisabled');
+                } else {
+                    historyBackButton.addClass('historyDisabled');
+                }
+            });
         });
 
         function confirmNewGame() {
-            document.getElementById('nextGame').innerHTML = 'Waiting';
-            $mult.zooKeeper.sendGameState('next');
-            // if(confirm('Sure a new game?')) {
-            //     $sol.game.newGame();
-            // }
+            if(!blocked) {
+                blocked = true;
+                $sol.ui.setBlocked(true);
+                document.getElementById('nextGame').innerHTML = 'Waiting';
+                // document.getElementById('darkLayer').style.display='block';
+                // document.getElementById('chatDiv').style.zIndex = '10002';
+                $mult.zooKeeper.sendGameState('next');
+            }
         }
 
         function back() {
-            $sol.game.historyBack();
+            if(!blocked) {
+                $sol.game.historyBack();
+            }
         }
 
         function fastForward() {
-            $sol.game.autoPushToTarget();
+            if(!blocked) {
+                $sol.game.autoPushToTarget();
+            }
         }
     </script>
 </head>
@@ -93,7 +111,7 @@
     </div>
 
     <div id="gameStage">
-        <div id="multiHeader" class= "innerDiv" style="display:none"></div>
+        <div id="multiHeader" class= "innerDiv" style="display:none;z-index: 10003"></div>
         <div id="backstage" class= "innerDiv">
             <div class="tile slot" id="slotKreuz"></div>
             <div class="tile slot" id="slotPik"></div>
@@ -107,7 +125,7 @@
                 <button id="nextGame" class="button" onclick="confirmNewGame();">Next Game</button>
                 <div class="tile counterTile" id="counterTile"></div>
                 <div class="tile counterTile" id="cashTile"></div>
-                <button id="back" class="button" disabled onclick="alert('disabled');"><span>&#8249;</span></button>
+                <button id="back" class="button" onclick="back();"><span>&#8249;</span></button>
                 <button id="ff" class="button" onclick="fastForward();"><span>&#187;</span></button>
             </div>
         </div>
