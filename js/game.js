@@ -65,6 +65,7 @@ window.$sol = window.$sol || {};
         };
 
         this.withState = (_state) => {
+            $sol.ui.setBlocked(false);
             this.state = _state;
             return this;
         };
@@ -81,11 +82,13 @@ window.$sol = window.$sol || {};
         };
 
         this.flipHeapCard = () => {
+            $sol.ui.setBlocked(false);
             open = true;
             $sol.ui.flipHeapCard(node);
         };
 
         this.flipCard = () => {
+            $sol.ui.setBlocked(false);
             open = true;
             $sol.ui.flipCard(node);
         };
@@ -328,7 +331,6 @@ window.$sol = window.$sol || {};
     }
 
     function checkTargetsFullAndAnimate() {
-        $sol.ui.setBlocked(false);
         if(targets.reduce((a, target) => !(!target.checkDone() || !a), true)) {
             window.setTimeout(()=> {
                 let i = 0;
@@ -430,7 +432,6 @@ window.$sol = window.$sol || {};
             history[history.length - 1] = [mouseDownCount, snapshot];
         } else {
             history.push([mouseDownCount, snapshot]);
-            // $sol.ui.setBlocked(false);
         }
     }
 
